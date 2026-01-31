@@ -1,0 +1,52 @@
+package infra
+
+import (
+	"stream_hub/pkg/constant"
+	"stream_hub/pkg/model/config"
+)
+
+type Base struct {
+	Clickhouse *Clickhouse
+	DB         DB
+	Redis      *Redis
+	Minio      Minio
+	ES         *Elasticsearch
+	Mongo      *Mongo
+}
+
+func NewBase(conf *config.CommonConfig) (*Base, error) {
+	clickhouse, err := NewClickhouse(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := NewMysql(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	redis := NewRedis(conf)
+	minio, err := NewMinio(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	es, err := NewElasticSearch(conf, constant.Video)
+	if err != nil {
+		return nil, err
+	}
+
+	mongo, err := NewMongo(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Base{
+		Clickhouse: clickhouse,
+		DB:         db,
+		Redis:      redis,
+		Minio:      minio,
+		ES:         es,
+		Mongo:      mongo,
+	}, nil
+}
