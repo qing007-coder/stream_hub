@@ -11,7 +11,7 @@ import (
 )
 
 type MongoClient struct {
-	Client *mongo.Client
+	client *mongo.Client
 }
 
 func NewMongoClient(conf *config.CommonConfig) (*MongoClient, error) {
@@ -24,9 +24,9 @@ func NewMongoClient(conf *config.CommonConfig) (*MongoClient, error) {
 		return nil, err
 	}
 
-	return &MongoClient{Client: client}, nil
+	return &MongoClient{client: client}, nil
 }
 
-func (m *MongoClient) Collection(db, coll string) *mongo.Collection {
-	return m.Client.Database(db).Collection(coll)
+func (m *MongoClient) Client() *mongo.Client {
+	return m.client
 }
