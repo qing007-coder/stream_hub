@@ -20,12 +20,10 @@ func NewMediaApi(base *infra.Base) *MediaApi {
 }
 
 func (m *MediaApi) UploadImage(ctx *gin.Context) {
-	userID := ctx.GetString("user_id")
 	fileHeader, err := ctx.FormFile("image")
 	imageType := ctx.PostForm("type")
 	if err != nil {
 		utils.BadRequest(ctx, "image is required")
-		m.Logger.Error(ctx.ClientIP(), userID, "missing image file", constant.Media)
 		return
 	}
 
@@ -38,7 +36,6 @@ func (m *MediaApi) UploadImage(ctx *gin.Context) {
 	file, err := fileHeader.Open()
 	if err != nil {
 		utils.InternalServerError(ctx)
-		m.Logger.Error(ctx.ClientIP(), userID, "open file failed", constant.Media)
 		return
 	}
 	defer file.Close()
@@ -68,7 +65,6 @@ func (m *MediaApi) UploadImage(ctx *gin.Context) {
 	)
 	if err != nil {
 		utils.InternalServerError(ctx)
-		m.Logger.Error(ctx.ClientIP(), userID, "upload image failed", constant.Media)
 		return
 	}
 
