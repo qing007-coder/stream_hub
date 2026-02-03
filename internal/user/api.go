@@ -181,11 +181,14 @@ func (u *UserApi) SendVerificationCode(ctx *gin.Context) {
 
 	id := utils.CreateUUID()
 
-	u.TaskSender.SendTask(infra_.TaskMessage{
+	if err := u.TaskSender.SendTask(infra_.TaskMessage{
 		TaskID:  id,
 		Type:    constant.TaskSendEmailCode,
 		Payload: req.Email,
-	})
+	}); err != nil {
+		utils.BadRequest(ctx, "send task failed")
+		return
+	}
 
 	u.DB.Create(&storage.Task{
 		ID:        id,
@@ -206,8 +209,7 @@ func (u *UserApi) UpdateProfile(ctx *gin.Context) {
 		return
 	}
 
-	//uid := ctx.GetString("user_id")
-	uid := "2018612652892229632"
+	uid := ctx.GetString("user_id")
 	var user storage.User
 	u.DB.Where("id = ?", uid).First(&user)
 
@@ -250,8 +252,7 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 		return
 	}
 
-	//uid := ctx.GetString("user_id")
-	uid := "2018612652892229632"
+	uid := ctx.GetString("user_id")
 	var user storage.User
 	u.DB.Where("id = ?", uid).First(&user)
 
@@ -270,8 +271,7 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 }
 
 func (u *UserApi) GetUserProfile(ctx *gin.Context) {
-	//uid := ctx.GetString("user_id")
-	uid := "2018612652892229632"
+	uid := ctx.GetString("user_id")
 	var user storage.User
 	u.DB.Where("id = ?", uid).First(&user)
 

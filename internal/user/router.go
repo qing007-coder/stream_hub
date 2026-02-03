@@ -9,15 +9,17 @@ import (
 )
 
 type UserRouter struct {
-	router *gin.Engine
-	user   *UserApi
-	port   int
+	router     *gin.Engine
+	user       *UserApi
+	middleware *Middleware
+	port       int
 }
 
 func NewUserRouter(base *infra.Base, auth *security.Auth, conf *config.UserConfig) *UserRouter {
 	router := &UserRouter{
-		port: conf.Port,
-		user: NewUserApi(base, auth),
+		port:       conf.Port,
+		user:       NewUserApi(base, auth),
+		middleware: NewMiddleware(base, auth),
 	}
 
 	router.init()
@@ -28,7 +30,7 @@ func NewUserRouter(base *infra.Base, auth *security.Auth, conf *config.UserConfi
 func (r *UserRouter) init() {
 	r.router = gin.Default()
 
-	user := r.router.Group("/user")
+	user := r.router.Group("/user").Use(r.middleware.Cors(), r.middleware.LogToStorage())
 	{
 		// 登录 / 注册
 		user.POST("/login", r.user.Login)
@@ -41,9 +43,9 @@ func (r *UserRouter) init() {
 		// 邮箱验证码
 		user.POST("/send_verification_code", r.user.SendVerificationCode)
 
-		user.PUT("/update_profile", r.user.UpdateProfile)
-		user.PUT("/password", r.user.UpdatePassword)
-		user.GET("/get_user_profile", r.user.GetUserProfile)
+		user.PUT("/update_profile", r.middleware.Auth(), r.user.UpdateProfile)
+		user.PUT("/password", r.middleware.Auth(), r.user.UpdatePassword)
+		user.GET("/get_user_profile", r.middleware.Auth(), r.user.GetUserProfile)
 	}
 }
 
