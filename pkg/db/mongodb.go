@@ -19,7 +19,7 @@ func NewMongoClient(conf *config.CommonConfig) (*MongoClient, error) {
 	defer cancel()
 
 	client, err := mongo.Connect(ctx, options.Client().
-		ApplyURI(fmt.Sprintf("%s:%s", conf.MongoDB.Addr, conf.MongoDB.Port)))
+		ApplyURI(fmt.Sprintf("mongodb://%s:%s", conf.MongoDB.Addr, conf.MongoDB.Port)))
 	if err != nil {
 		return nil, err
 	}

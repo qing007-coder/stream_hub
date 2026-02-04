@@ -12,7 +12,7 @@ type ElasticSearchClient struct {
 
 func NewElasticSearchClient(conf *config.CommonConfig) (*ElasticSearchClient, error) {
 	client, err := elasticsearch.NewTypedClient(elasticsearch.Config{
-		Addresses: []string{fmt.Sprintf("&%s:%s", conf.Elasticsearch.Addr, conf.Elasticsearch.Port)},
+		Addresses: []string{fmt.Sprintf("%s:%s", conf.Elasticsearch.Addr, conf.Elasticsearch.Port)},
 	})
 
 	if err != nil {
