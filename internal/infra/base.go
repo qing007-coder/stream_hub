@@ -7,11 +7,13 @@ import (
 
 type Base struct {
 	Clickhouse *Clickhouse
-	DB         DB
+	DB         *DB
 	Redis      *Redis
-	Minio      Minio
+	Minio      *Minio
 	ES         *Elasticsearch
 	Mongo      *Mongo
+	Logger     *Logger
+	TaskSender *TaskSender
 }
 
 func NewBase(conf *config.CommonConfig) (*Base, error) {
@@ -41,6 +43,16 @@ func NewBase(conf *config.CommonConfig) (*Base, error) {
 		return nil, err
 	}
 
+	logger, err := NewLogger(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	taskSender, err := NewTaskSender(conf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Base{
 		Clickhouse: clickhouse,
 		DB:         db,
@@ -48,5 +60,7 @@ func NewBase(conf *config.CommonConfig) (*Base, error) {
 		Minio:      minio,
 		ES:         es,
 		Mongo:      mongo,
+		Logger:     logger,
+		TaskSender: taskSender,
 	}, nil
 }

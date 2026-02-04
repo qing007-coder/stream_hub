@@ -20,6 +20,7 @@ func NewMinioClient(conf *config.CommonConfig) (*MinioClient, error) {
 			conf.Minio.SecretKey,
 			"",
 		),
+		Secure: false,
 	})
 	if err != nil {
 		return nil, err
