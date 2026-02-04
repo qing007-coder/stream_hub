@@ -6,13 +6,17 @@ import (
 	"stream_hub/pkg/model/config"
 )
 
-type Minio *minio.Client
+type Minio struct {
+	*minio.Client
+}
 
-func NewMinio(conf *config.CommonConfig) (Minio, error) {
+func NewMinio(conf *config.CommonConfig) (*Minio, error) {
 	client, err := db.NewMinioClient(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.Minio(), nil
+	return &Minio{
+		client.Minio(),
+	}, nil
 }
