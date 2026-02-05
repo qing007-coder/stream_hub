@@ -17,7 +17,7 @@ type MediaRouter struct {
 
 func NewMediaRouter(base *infra.Base, conf *config.MediaConfig, auth *security.Auth) *MediaRouter {
 	r := new(MediaRouter)
-	r.media = NewMediaApi(base)
+	r.media = NewMediaApi(base, conf)
 	r.middleware = NewMiddleware(base, auth)
 	r.port = conf.Port
 	r.init()
@@ -27,9 +27,13 @@ func NewMediaRouter(base *infra.Base, conf *config.MediaConfig, auth *security.A
 
 func (r *MediaRouter) init() {
 	r.router = gin.Default()
-	media := r.router.Group("/media").Use(r.middleware.Cors(), r.middleware.LogToStorage(), r.middleware.Auth())
+	r.router.Use(r.middleware.Cors(), r.middleware.LogToStorage())
+	media := r.router.Group("/media").Use(r.middleware.Auth())
 	{
 		media.POST("upload_image", r.media.UploadImage)
+		media.POST("init_upload", r.media.InitUpload)
+		media.POST("upload_chunk", r.media.UploadChunk)
+		media.POST("complete_upload", r.media.CompleteUpload)
 	}
 }
 

@@ -2,6 +2,7 @@ package media
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
@@ -27,16 +28,24 @@ func NewMiddleware(base *infra.Base, auth *security.Auth) *Middleware {
 func (m *Middleware) Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
+		origin := c.Request.Header.Get("Origin")
 
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-		c.Header("Access-Control-Allow-Headers", "*")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
-		c.Header("Access-Control-Allow-Credentials", "true")
-
-		if method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
+		if origin != "" {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
+			c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
+			c.Header("Access-Control-Allow-Credentials", "true")
 		}
+
+		// 处理预检请求 (OPTIONS)
+		if method == "OPTIONS" {
+			// 注意：预检请求直接中断，不要走后面的 Auth 中间件
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		fmt.Println("CORS triggered, Method:", c.Request.Method)
+
 		c.Next()
 	}
 }
@@ -108,10 +117,12 @@ func (m *Middleware) Auth() gin.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, jwt.ErrTokenExpired) {
 				utils.UnAuthorizationRequest(ctx, "token expired")
+				ctx.Abort()
 				return
 			}
 
 			utils.UnAuthorizationRequest(ctx, "token invalid")
+			ctx.Abort()
 		}
 
 		ctx.Set("user_id", claims.UserID)

@@ -216,7 +216,7 @@ func (u *UserApi) UpdateProfile(ctx *gin.Context) {
 	if user.BackgroundURL != req.BackgroundUrl && user.BackgroundURL != "" {
 		path := strings.SplitN(strings.TrimPrefix(user.BackgroundURL, "/"), "/", 2)
 		bucket, object := path[0], path[1]
-		if err := u.Minio.RemoveObject(context.Background(), bucket, object, minio.RemoveObjectOptions{}); err != nil {
+		if err := u.Minio.Client.RemoveObject(context.Background(), bucket, object, minio.RemoveObjectOptions{}); err != nil {
 			utils.BadRequest(ctx, "remove bucket object failed")
 			return
 		}
@@ -225,7 +225,7 @@ func (u *UserApi) UpdateProfile(ctx *gin.Context) {
 	if user.Avatar != req.AvatarUrl && user.Avatar != "" {
 		path := strings.SplitN(strings.TrimPrefix(user.Avatar, "/"), "/", 2)
 		bucket, object := path[0], path[1]
-		if err := u.Minio.RemoveObject(context.Background(), bucket, object, minio.RemoveObjectOptions{}); err != nil {
+		if err := u.Minio.Client.RemoveObject(context.Background(), bucket, object, minio.RemoveObjectOptions{}); err != nil {
 			utils.BadRequest(ctx, "remove bucket object failed")
 			return
 		}
