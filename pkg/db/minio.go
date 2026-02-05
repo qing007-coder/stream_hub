@@ -9,6 +9,7 @@ import (
 
 type MinioClient struct {
 	client *minio.Client
+	core   *minio.Core
 }
 
 func NewMinioClient(conf *config.CommonConfig) (*MinioClient, error) {
@@ -22,13 +23,29 @@ func NewMinioClient(conf *config.CommonConfig) (*MinioClient, error) {
 		),
 		Secure: false,
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &MinioClient{client: client}, nil
+	core, err := minio.NewCore(endpoint, &minio.Options{
+		Creds: credentials.NewStaticV4(
+			conf.Minio.AccessKey,
+			conf.Minio.SecretKey,
+			"",
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &MinioClient{client: client, core: core}, nil
 }
 
 func (m *MinioClient) Minio() *minio.Client {
 	return m.client
+}
+
+func (m *MinioClient) Core() *minio.Core {
+	return m.core
 }
