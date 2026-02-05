@@ -29,8 +29,9 @@ func NewUserRouter(base *infra.Base, auth *security.Auth, conf *config.UserConfi
 
 func (r *UserRouter) init() {
 	r.router = gin.Default()
+	r.router.Use(r.middleware.Cors(), r.middleware.LogToStorage())
 
-	user := r.router.Group("/user").Use(r.middleware.Cors(), r.middleware.LogToStorage())
+	user := r.router.Group("/user")
 	{
 		// 登录 / 注册
 		user.POST("/login", r.user.Login)
