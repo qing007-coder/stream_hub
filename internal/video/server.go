@@ -13,17 +13,19 @@ import (
 )
 
 type Server struct {
-	srv   micro.Service
-	video *Video
-	port  int
-	name  string
+	srv     micro.Service
+	video   *Video
+	wrapper *Wrapper
+	port    int
+	name    string
 }
 
 func NewServer(base *infra.Base, commonConf *config.CommonConfig, videoConf *config.VideoConfig) (*Server, error) {
 	s := &Server{
-		port:  videoConf.Port,
-		name:  videoConf.Name,
-		video: NewVideo(base),
+		port:    videoConf.Port,
+		name:    videoConf.Name,
+		video:   NewVideo(base),
+		wrapper: NewWrapper(),
 	}
 
 	if err := s.init(commonConf); err != nil {
@@ -43,8 +45,8 @@ func (s *Server) init(conf *config.CommonConfig) error {
 		micro.Client(grpcc.NewClient()), // 使用 gRPC client
 		micro.Name(s.name),
 		micro.Version("latest"),
-		micro.Registry(c), // 必须放底下哎，不然注册中心的优先级会变的
-		//micro.WrapHandler(s.m.Auth), // 这个也是 顺序不能变
+		micro.Registry(c),                      // 必须放底下哎，不然注册中心的优先级会变的
+		micro.WrapHandler(s.wrapper.GetUserID), // 这个也是 顺序不能变
 		micro.Address(fmt.Sprintf(":%d", s.port)),
 	)
 
