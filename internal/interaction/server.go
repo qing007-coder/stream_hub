@@ -1,4 +1,4 @@
-package video
+package interaction
 
 import (
 	"fmt"
@@ -8,24 +8,24 @@ import (
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/registry"
 	"stream_hub/internal/infra"
-	"stream_hub/internal/proto/video"
+	"stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/model/config"
 )
 
 type Server struct {
-	srv     micro.Service
-	video   *Video
-	wrapper *Wrapper
-	port    int
-	name    string
+	srv         micro.Service
+	interaction *Interaction
+	wrapper     *Wrapper
+	port        int
+	name        string
 }
 
-func NewServer(base *infra.Base, commonConf *config.CommonConfig, videoConf *config.VideoConfig) (*Server, error) {
+func NewServer(base *infra.Base, commonConf *config.CommonConfig, interactionConf *config.InteractionConfig) (*Server, error) {
 	s := &Server{
-		port:    videoConf.Port,
-		name:    videoConf.Name,
-		video:   NewVideo(base),
-		wrapper: NewWrapper(),
+		port:        interactionConf.Port,
+		name:        interactionConf.Name,
+		interaction: NewInteraction(base),
+		wrapper:     NewWrapper(),
 	}
 
 	if err := s.init(commonConf); err != nil {
@@ -52,7 +52,7 @@ func (s *Server) init(conf *config.CommonConfig) error {
 
 	s.srv.Init()
 
-	return video.RegisterVideoServiceHandler(s.srv.Server(), s.video)
+	return interaction.RegisterInteractionServiceHandler(s.srv.Server(), s.interaction)
 }
 
 func (s *Server) Run() error {
