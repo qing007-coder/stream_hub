@@ -21,10 +21,17 @@ type Server struct {
 }
 
 func NewServer(base *infra.Base, commonConf *config.CommonConfig, videoConf *config.VideoConfig) (*Server, error) {
+	sender, err := NewEventSender(commonConf, videoConf)
+	if err != nil {
+		return nil, err
+	}
+
+	go sender.Run()
+
 	s := &Server{
 		port:    videoConf.Port,
 		name:    videoConf.Name,
-		video:   NewVideo(base),
+		video:   NewVideo(base, sender),
 		wrapper: NewWrapper(),
 	}
 
@@ -45,8 +52,8 @@ func (s *Server) init(conf *config.CommonConfig) error {
 		micro.Client(grpcc.NewClient()), // 使用 gRPC client
 		micro.Name(s.name),
 		micro.Version("latest"),
-		micro.Registry(c),                      // 必须放底下哎，不然注册中心的优先级会变的
-		micro.WrapHandler(s.wrapper.GetUserID), // 这个也是 顺序不能变
+		micro.Registry(c), // 必须放底下哎，不然注册中心的优先级会变的
+		micro.WrapHandler(s.wrapper.GetUserID, s.wrapper.SendEventField), // 这个也是 顺序不能变
 		micro.Address(fmt.Sprintf(":%d", s.port)),
 	)
 

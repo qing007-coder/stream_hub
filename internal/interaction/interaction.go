@@ -12,11 +12,11 @@ type Interaction struct {
 	*Comment
 }
 
-func NewInteraction(base *infra.Base) *Interaction {
+func NewInteraction(base *infra.Base, sender *EventSender) *Interaction {
 	return &Interaction{
-		Like:      NewLike(base),
-		Favourite: NewFavourite(base),
-		Follow:    NewFollow(base),
-		Comment:   NewComment(base),
+		Like:      NewLike(base, sender),
+		Favourite: NewFavourite(base, sender),
+		Follow:    NewFollow(base, sender),
+		Comment:   NewComment(base, sender),
 	}
 }

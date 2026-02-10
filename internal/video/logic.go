@@ -3,6 +3,8 @@ package video
 import (
 	"context"
 	"errors"
+	"stream_hub/pkg/utils"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -15,10 +17,11 @@ import (
 
 type Video struct {
 	*infra.Base
+	sender *EventSender
 }
 
-func NewVideo(base *infra.Base) *Video {
-	return &Video{base}
+func NewVideo(base *infra.Base, sender *EventSender) *Video {
+	return &Video{base, sender}
 }
 
 func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, resp *video.AuthorVideoInfo) error {
@@ -38,6 +41,17 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 	}
 
 	v.fillAuthorVideoInfo(resp, &model)
+
+	eventType := ctx.Value("event_type").(string)
+	resourceType := ctx.Value("resource_type").(string)
+
+	v.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: resourceType,
+		ResourceID:   model.ID,
+		Timestamp:    time.Now().Unix(),
+	})
 
 	return v.TaskSender.SendTask(infra_.TaskMessage{
 		Type:  constant.TaskVideoToES,

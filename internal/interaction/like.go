@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
+	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
+	"stream_hub/pkg/utils"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -14,11 +16,13 @@ import (
 
 type Like struct {
 	*infra.Base
+	sender *EventSender
 }
 
-func NewLike(base *infra.Base) *Like {
+func NewLike(base *infra.Base, sender *EventSender) *Like {
 	return &Like{
 		base,
+		sender,
 	}
 }
 
@@ -50,6 +54,16 @@ func (l *Like) CreateLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 	}).Error; err != nil {
 		return err
 	}
+
+	eventType := ctx.Value("event_type").(string)
+
+	l.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: constant.ResourceVideo,
+		ResourceID:   req.VideoId,
+		Timestamp:    time.Now().Unix(),
+	})
 
 	resp.Success = true
 	resp.Message = "ok"
