@@ -7,16 +7,19 @@ import (
 	"github.com/go-redis/redis/v8"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
+	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
+	"stream_hub/pkg/utils"
 	"time"
 )
 
 type Follow struct {
 	*infra.Base
+	sender *EventSender
 }
 
-func NewFollow(base *infra.Base) *Follow {
-	return &Follow{base}
+func NewFollow(base *infra.Base, sender *EventSender) *Follow {
+	return &Follow{base, sender}
 }
 
 // CreateFollow 关注
@@ -42,6 +45,16 @@ func (f *Follow) CreateFollow(ctx context.Context, req *pb.FollowRequest, resp *
 	pipe.ZAdd(ctx, fmt.Sprintf("user:follower:%s", req.TargetUserId), &redis.Z{Score: now, Member: uid})
 	_, err := pipe.Exec(ctx)
 
+	eventType := ctx.Value("event_type").(string)
+
+	f.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: constant.ResourceUser,
+		ResourceID:   req.TargetUserId,
+		Timestamp:    time.Now().Unix(),
+	})
+
 	resp.Success = true
 	resp.Message = "ok"
 	return err
@@ -51,7 +64,7 @@ func (f *Follow) CreateFollow(ctx context.Context, req *pb.FollowRequest, resp *
 func (f *Follow) DeleteFollow(ctx context.Context, req *pb.FollowRequest, resp *pb.ActionResponse) error {
 	uid := ctx.Value("user_id").(string)
 
-	if err := f.DB.Where("user_id = ? AND target_id = ?", uid, req.TargetUserId).Delete(&storage.UserFollowModel{}).Error; err != nil {
+	if err := f.DB.Where("user_id = ? AND target_user_id = ?", uid, req.TargetUserId).Delete(&storage.UserFollowModel{}).Error; err != nil {
 		return err
 	}
 
@@ -59,6 +72,16 @@ func (f *Follow) DeleteFollow(ctx context.Context, req *pb.FollowRequest, resp *
 	pipe.ZRem(ctx, fmt.Sprintf("user:following:%s", uid), req.TargetUserId)
 	pipe.ZRem(ctx, fmt.Sprintf("user:follower:%s", req.TargetUserId), uid)
 	_, err := pipe.Exec(ctx)
+
+	eventType := ctx.Value("event_type").(string)
+
+	f.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: constant.ResourceUser,
+		ResourceID:   req.TargetUserId,
+		Timestamp:    time.Now().Unix(),
+	})
 
 	resp.Success = true
 	resp.Message = "ok"
@@ -76,7 +99,7 @@ func (f *Follow) IsFollow(ctx context.Context, req *pb.IsFollowRequest, resp *pb
 
 	// 如果 Redis 没命中，查 DB 并回填
 	var count int64
-	f.DB.Model(&storage.UserFollowModel{}).Where("user_id = ? AND target_id = ?", uid, req.TargetUserId).Count(&count)
+	f.DB.Model(&storage.UserFollowModel{}).Where("user_id = ? AND target_user_id = ?", uid, req.TargetUserId).Count(&count)
 	if count > 0 {
 		resp.IsFollow = true
 		_ = f.Redis.ZAdd(ctx, fmt.Sprintf("user:following:%s", uid), &redis.Z{Score: float64(time.Now().Unix()), Member: req.TargetUserId})

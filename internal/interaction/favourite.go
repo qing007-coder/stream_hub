@@ -7,17 +7,21 @@ import (
 	"github.com/go-redis/redis/v8"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
+	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
+	"stream_hub/pkg/utils"
 	"time"
 )
 
 type Favourite struct {
 	*infra.Base
+	sender *EventSender
 }
 
-func NewFavourite(base *infra.Base) *Favourite {
+func NewFavourite(base *infra.Base, sender *EventSender) *Favourite {
 	return &Favourite{
 		base,
+		sender,
 	}
 }
 
@@ -48,6 +52,16 @@ func (f *Favourite) CreateFavorite(ctx context.Context, req *pb.FavoriteRequest,
 	}).Error; err != nil {
 		return err
 	}
+
+	eventType := ctx.Value("event_type").(string)
+
+	f.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: constant.ResourceVideo,
+		ResourceID:   req.VideoId,
+		Timestamp:    time.Now().Unix(),
+	})
 
 	resp.Success = true
 	resp.Message = "ok"

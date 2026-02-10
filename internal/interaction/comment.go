@@ -10,15 +10,17 @@ import (
 	pb "stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
+	"stream_hub/pkg/utils"
 	"time"
 )
 
 type Comment struct {
 	*infra.Base
+	sender *EventSender
 }
 
-func NewComment(base *infra.Base) *Comment {
-	return &Comment{base}
+func NewComment(base *infra.Base, sender *EventSender) *Comment {
+	return &Comment{base, sender}
 }
 
 func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentRequest, resp *pb.Comment) error {
@@ -32,10 +34,14 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 	}
 
 	now := time.Now().Unix()
+	var user storage.User
+	c.DB.Where("id = ? ", uid).First(&user)
 
 	doc := storage.CommentModel{
 		VideoID:       req.VideoId,
 		UserID:        uid,
+		Avatar:        user.Avatar,
+		Nickname:      user.Nickname,
 		Content:       req.Content,
 		ParentID:      req.ParentId,
 		ReplyToUserID: req.ReplyToUserId,
@@ -53,6 +59,16 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 	}
 
 	oid := res.InsertedID.(primitive.ObjectID)
+
+	eventType := ctx.Value("event_type").(string)
+
+	c.sender.Send(&storage.Event{
+		EventID:      utils.CreateID(),
+		EventType:    eventType,
+		ResourceType: constant.ResourceVideo,
+		ResourceID:   req.VideoId,
+		Timestamp:    time.Now().Unix(),
+	})
 
 	// 回填 response
 	resp.Id = oid.Hex()
