@@ -1,4 +1,4 @@
-package internal
+package core
 
 import (
 	"context"
@@ -21,8 +21,7 @@ type Worker struct {
 	id              string
 	picker          *Picker       // 队列获取决策
 	concurrencyChan chan struct{} // 最大并发数
-	taskChan        chan *infra_.TaskMessage
-	activeQueue     string // 自己的私有队列: schedule:active:worker_{id}
+	activeQueue     string        // 自己的私有队列: schedule:active:worker_{id}
 	db              *gorm.DB
 	rdb             *infra.Redis
 	deadLetter      string
@@ -35,14 +34,12 @@ type Worker struct {
 func NewWorker(id string, db *gorm.DB, rdb *infra.Redis, conf *config.SchedulerConfig, deathChan chan string) *Worker {
 	picker := NewQueuePicker(conf.Queue)
 	concurrencyChan := make(chan struct{}, conf.Concurrency)
-	taskChan := make(chan *infra_.TaskMessage, conf.Concurrency)
 	return &Worker{
 		id:              id,
 		rdb:             rdb,
 		concurrencyChan: concurrencyChan,
-		taskChan:        taskChan,
 		picker:          picker,
-		activeQueue:     fmt.Sprintf("task:active:worker_%s", id),
+		activeQueue:     fmt.Sprintf("scheduler:active:worker_%s", id),
 		retry:           NewRetry(rdb, conf),
 		serveMux:        NewServeMux(),
 		db:              db,
@@ -58,10 +55,30 @@ func (w *Worker) Start() {
 		go w.fetch()
 
 		for {
-			select {
-			case task := <-w.taskChan:
-				go w.execute(task)
+			taskID, err := w.rdb.BRPop(context.Background(), time.Second*5, w.activeQueue)
+			if err != nil {
+				log.Println("err:", err)
+				continue
 			}
+
+			data, err := w.rdb.HGet(context.Background(), " task:pool", taskID[1]).Bytes()
+			if err != nil {
+				log.Println("err:", err)
+				continue
+			}
+
+			var task infra_.TaskMessage
+			if err := json.Unmarshal(data, &task); err != nil {
+				w.retryTask(&task, err)
+				continue
+			}
+
+			if w.taskHealth.Check(&task) {
+				w.taskHealth.HandleBlackList(&task)
+				continue
+			}
+
+			w.execute(&task)
 		}
 	}()
 }
@@ -77,26 +94,11 @@ func (w *Worker) fetch() {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-
-		pipeline := w.rdb.Pipeline()
-		pipeline.LPush(ctx, w.activeQueue, taskID)
-		data, _ := pipeline.HGet(ctx, "task:pool", taskID[1]).Bytes()
-
-		cancel()
-
-		var task infra_.TaskMessage
-		if err := json.Unmarshal(data, &task); err != nil {
-			w.retryTask(&task, err)
+		if err := w.rdb.LPush(context.Background(), queue, taskID[1]); err != nil {
+			log.Println("err:", err)
 			continue
 		}
 
-		if w.taskHealth.Check(&task) {
-			w.taskHealth.HandleBlackList(&task)
-			continue
-		}
-
-		w.taskChan <- &task
 		w.concurrencyChan <- struct{}{}
 	}
 }
@@ -107,7 +109,20 @@ func (w *Worker) execute(task *infra_.TaskMessage) {
 		return
 	}
 
-	retryCount := w.rdb.HGet(context.Background(), "task:retry_count", task.TaskID)
+	retryCount := w.rdb.HGet(context.Background(), "task:retry_count", task.TaskID).Val()
+	pipeline := w.rdb.Pipeline()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	pipeline.HDel(ctx, "task:retry_count", task.TaskID)
+	pipeline.HDel(ctx, "task:pool", task.TaskID)
+
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		log.Println("err:", err)
+		return
+	}
+
 	count, _ := strconv.Atoi(retryCount)
 
 	if err := w.db.Model(&storage.Task{}).Where("id = ?", task.TaskID).Updates(map[string]interface{}{
