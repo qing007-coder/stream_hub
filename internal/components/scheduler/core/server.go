@@ -1,13 +1,12 @@
-package internal
+package core
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
 	"log"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/model/config"
-	"stream_hub/pkg/model/scheduler"
 	"stream_hub/pkg/utils"
 	"sync"
 	"time"
@@ -19,6 +18,8 @@ type Server struct {
 	rdb               *infra.Redis
 	workerNum         int
 	workerDeathChan   chan string
+	registerKey       string
+	deathKey          string
 	workerPool        map[string]*Worker
 	heartbeatTicker   *time.Ticker
 	heartbeatInterval time.Duration
@@ -33,6 +34,8 @@ func NewServer(db *gorm.DB, rdb *infra.Redis, conf *config.SchedulerConfig) *Ser
 	server.workerPool = make(map[string]*Worker)
 	server.heartbeatExpiry = time.Duration(conf.HeartbeatExpiry) * time.Millisecond
 	server.heartbeatInterval = time.Duration(conf.HeartbeatInterval) * time.Millisecond
+	server.registerKey = conf.RegisterKey
+	server.deathKey = conf.DeathKey
 	workerDeathChan := make(chan string, 10)
 	server.workerDeathChan = workerDeathChan
 	for i := 0; i < server.workerNum; i++ {
@@ -53,19 +56,24 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	s.heartbeatTicker = time.NewTicker(s.heartbeatExpiry)
+	s.heartbeatTicker = time.NewTicker(s.heartbeatInterval)
 
 	for {
 		select {
 		case <-s.heartbeatTicker.C:
-			if err := s.SendHeartbeat(); err != nil {
-				log.Println("err:", err)
-			}
+			go func() {
+				if err := s.SendHeartbeat(); err != nil {
+					log.Println("err:", err)
+				}
+			}()
 
 		case workerID := <-s.workerDeathChan:
 			s.mu.Lock()
 			delete(s.workerPool, workerID)
 			s.mu.Unlock()
+			if err := s.SendDeath(workerID); err != nil {
+				log.Println("err:", err)
+			}
 		}
 	}
 }
@@ -78,31 +86,19 @@ func (s *Server) RegisterWorker() error {
 	}
 	s.mu.Unlock()
 
-	if err := s.rdb.HSet(context.Background(), "scheduler:active_workers", workers); err != nil {
+	if err := s.rdb.HSet(context.Background(), s.registerKey+s.id, workers); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// SendHeartbeat 假设心跳周期是 5 秒，我们把过期时间设为 15 秒（3倍容错）
+// SendHeartbeat 假设心跳周期是 5 秒，过期时间设为 15 秒（3倍容错）
 func (s *Server) SendHeartbeat() error {
-	s.mu.Lock()
-	var payload scheduler.HeartbeatPayload
-	payload.NodeID = s.id
-	for workerID, _ := range s.workerPool {
-		payload.WorkersID = append(payload.WorkersID, workerID)
-	}
-	s.mu.Unlock()
+	return s.rdb.Set(context.Background(), "scheduler:heartbeat:"+s.id, 1, s.heartbeatExpiry)
+}
 
-	data, err := json.Marshal(&payload)
-	if err != nil {
-		return err
-	}
-
-	if err := s.rdb.Set(context.Background(), "scheduler:heartbeat:node_"+s.id, data, s.heartbeatExpiry); err != nil {
-		return err
-	}
-
-	return nil
+func (s *Server) SendDeath(workerID string) error {
+	key := fmt.Sprintf("%s:%s", s.id, workerID)
+	return s.rdb.LPush(context.Background(), s.deathKey, key)
 }

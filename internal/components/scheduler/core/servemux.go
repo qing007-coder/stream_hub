@@ -1,4 +1,4 @@
-package internal
+package core
 
 import (
 	"context"
@@ -26,6 +26,7 @@ func (s *ServeMux) HandleFunc(pattern string, handler func(context.Context, *inf
 
 func (s *ServeMux) Execute(ctx context.Context, pattern string, task *infra_.TaskMessage) error {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	handler := s.mux[pattern]
 	return handler(ctx, task)
 }
