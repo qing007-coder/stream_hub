@@ -278,7 +278,6 @@ func (m *MediaApi) CompleteUpload(ctx *gin.Context) {
 
 	// 发送转码任务
 	if err := m.TaskSender.SendTask(infra_.TaskMessage{
-		TaskID:  utils.CreateID(),
 		Type:    constant.TaskVideoTranscode,
 		BizID:   video.ID,
 		Payload: data["file_name"],

@@ -33,7 +33,7 @@ func NewBase(conf *config.CommonConfig) (*Base, error) {
 		return nil, err
 	}
 
-	es, err := NewElasticSearch(conf, constant.Video)
+	es, err := NewElasticSearch(conf, constant.ESVideo)
 	if err != nil {
 		return nil, err
 	}

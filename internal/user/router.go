@@ -39,7 +39,7 @@ func (r *UserRouter) init() {
 
 		// token
 		user.POST("/refresh", r.user.RefreshToken)
-		user.POST("/logout", r.user.Logout)
+		user.POST("/logout", r.middleware.Auth(), r.user.Logout)
 
 		// 邮箱验证码
 		user.POST("/send_verification_code", r.user.SendVerificationCode)
