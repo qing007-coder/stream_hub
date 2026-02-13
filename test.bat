@@ -1,0 +1,6 @@
+start cmd /c "go run ./cmd/media.go"
+start cmd /c "go run ./cmd/user.go"
+start cmd /c "go run ./cmd/components/logger.go"
+start cmd /c "go run ./cmd/video.go"
+start cmd /c "go run ./cmd/interaction.go"
+start cmd /c "go run ./cmd/gateway.go"

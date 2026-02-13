@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>StreamHub 媒体上传测试</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        input, button { padding: 8px; margin: 5px 0; }
+        #progress-bar { width: 100%; background: #eee; height: 20px; border-radius: 10px; overflow: hidden; display: none; }
+        #progress-inner { width: 0%; background: #4caf50; height: 100%; transition: width 0.3s; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<h2>StreamHub 接口调试面板</h2>
+
+<div class="card">
+    <label>1. 设置 Token (Authorization):</label><br>
+    <input type="text" id="token" placeholder="Bearer your_token_here" style="width: 80%;">
+</div>
+
+<div class="card">
+    <label>2. 图片上传测试 (UploadImage):</label><br>
+    <input type="file" id="imageFile" accept="image/*">
+    <select id="imageType">
+        <option value="public">public</option>
+        <option value="private">private</option>
+    </select>
+    <button onclick="uploadImage()">上传图片</button>
+</div>
+
+<div class="card">
+    <label>3. 视频分片上传测试 (Init -> Chunk -> Complete):</label><br>
+    <input type="file" id="videoFile" accept="video/*">
+    <button onclick="startVideoUpload()">开始分片上传</button>
+
+    <div id="status-text" style="margin-top: 10px; font-weight: bold;"></div>
+    <div id="progress-bar"><div id="progress-inner"></div></div>
+</div>
+
+<div class="card">
+    <label>日志输出:</label>
+    <pre id="log"></pre>
+</div>
+
+<script>
+    const BASE_URL = 'http://127.0.0.1:8082/media'; // 确认你的后端端口
+
+    function log(msg, data = '') {
+        const el = document.getElementById('log');
+        const timestamp = new Date().toLocaleTimeString();
+        el.innerText += `[${timestamp}] ${msg} ${data ? JSON.stringify(data, null, 2) : ''}\n`;
+        console.log(msg, data);
+    }
+
+    async function request(url, options = {}) {
+        const token = document.getElementById('token').value;
+        options.headers = {
+            ...options.headers,
+            'Authorization': token
+        };
+        const resp = await fetch(url, options);
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.message || '请求失败');
+        return result;
+    }
+
+    // --- 1. 图片上传 ---
+    async function uploadImage() {
+        try {
+            const file = document.getElementById('imageFile').files[0];
+            const type = document.getElementById('imageType').value;
+            if(!file) return alert("请选择图片");
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('type', type);
+
+            log("正在上传图片...");
+            const res = await request(`${BASE_URL}/upload_image`, {
+                method: 'POST',
+                body: formData
+            });
+            log("图片上传成功", res);
+        } catch (e) { log("图片上传失败: " + e.message); }
+    }
+
+    // --- 2. 视频分片逻辑 ---
+    async function startVideoUpload() {
+        const file = document.getElementById('videoFile').files[0];
+        if(!file) return alert("请选择视频");
+
+        try {
+            document.getElementById('progress-bar').style.display = 'block';
+
+            // A. 计算 Hash (使用 SparkMD5)
+            log("正在计算文件哈希...");
+            const fileHash = await calculateHash(file);
+            log("Hash计算完成: " + fileHash);
+
+            // B. Init Upload
+            const initData = await request(`${BASE_URL}/init_upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    file_size: file.size,
+                    file_hash: fileHash,
+                    file_type: file.type
+                })
+            });
+
+            if (initData.data.is_skipped) {
+                log("秒传成功！视频地址: " + initData.data.video_url);
+                updateProgress(100);
+                return;
+            }
+
+            const { upload_id, chunk_size, finish_chunk } = initData.data;
+            const totalChunks = Math.ceil(file.size / chunk_size);
+            log(`初始化成功，总片数: ${totalChunks}`);
+
+            // C. 循环上传分片
+            for (let i = 1; i <= totalChunks; i++) {
+                if (finish_chunk && finish_chunk.includes(i)) {
+                    log(`分片 ${i} 已存在，跳过`);
+                    continue;
+                }
+
+                const start = (i - 1) * chunk_size;
+                const end = Math.min(start + chunk_size, file.size);
+                const blob = file.slice(start, end);
+
+                const formData = new FormData();
+                formData.append('file', blob);
+                formData.append('file_hash', fileHash);
+                formData.append('upload_id', upload_id);
+                formData.append('part_number', i);
+
+                await request(`${BASE_URL}/upload_chunk`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                log(`分片 ${i}/${totalChunks} 上传完成`);
+                updateProgress((i / totalChunks) * 90); // 留10%给合并
+            }
+
+            // D. Complete Upload
+            log("正在请求合并分片...");
+            const final = await request(`${BASE_URL}/complete_upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    file_hash: fileHash,
+                    upload_id: upload_id
+                })
+            });
+
+            updateProgress(100);
+            log("全流程上传成功！", final);
+
+        } catch (e) {
+            log("上传过程中出错: " + e.message);
+        }
+    }
+
+    // 辅助函数：计算 MD5
+    function calculateHash(file) {
+        return new Promise((resolve) => {
+            const spark = new SparkMD5.ArrayBuffer();
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = (e) => {
+                spark.append(e.target.result);
+                resolve(spark.end());
+            };
+        });
+    }
+
+    function updateProgress(percent) {
+        document.getElementById('progress-inner').style.width = percent + '%';
+        document.getElementById('status-text').innerText = `当前进度: ${Math.round(percent)}%`;
+    }
+</script>
+</body>
+</html>
