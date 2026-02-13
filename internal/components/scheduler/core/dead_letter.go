@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"gorm.io/gorm"
 	"log"
 	"strconv"
 	"stream_hub/internal/infra"
@@ -10,6 +9,8 @@ import (
 	"stream_hub/pkg/model/config"
 	"stream_hub/pkg/model/storage"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type DeadLetter struct {
@@ -47,12 +48,10 @@ func (d *DeadLetter) consume() {
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		pipeline := d.rdb.Pipeline()
-		errMsg := pipeline.HGet(ctx, "task:error", taskID).Val()
-		retryCount := pipeline.HGet(ctx, "task:retry_count", taskID).Val()
+		errMsg := pipeline.HGet(ctx, "task:meta:"+taskID, "error_msg").Val()
+		retryCount := pipeline.HGet(ctx, "task:meta:"+taskID, "retry_count").Val()
 		count, _ := strconv.Atoi(retryCount)
-		pipeline.HDel(ctx, "task:error", taskID)
-		pipeline.HDel(ctx, "task:pool", taskID)
-		pipeline.HDel(ctx, "task:retry_count", taskID)
+		pipeline.Del(ctx, "task:meta:"+taskID, "task:payload:"+taskID)	
 		_, err = pipeline.Exec(ctx)
 		if err != nil {
 			log.Println("err:", err)

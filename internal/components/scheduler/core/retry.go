@@ -34,10 +34,10 @@ func (r *Retry) retry(task *infra_.TaskMessage, err error) {
 	defer cancel()
 
 	pipeline := r.rdb.Pipeline()
-	count, _ := pipeline.HIncrBy(ctx, "task:retry_count", task.TaskID, 1).Result()
+	count, _ := pipeline.HIncrBy(ctx, "task:meta:"+task.TaskID, "retry_count", 1).Result()
+	pipeline.HSet(ctx, "task:meta:"+task.TaskID, "error_msg", err.Error())
 
 	if count >= r.MaxRetry {
-		pipeline.HSet(ctx, "task:error", task.TaskID, err.Error())
 		if err := r.sendToDlq(task.TaskID); err != nil {
 			log.Println("err:", err)
 			return
