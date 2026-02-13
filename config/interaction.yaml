@@ -1,0 +1,4 @@
+name: "interaction_master"
+port: 54181
+send_event_duration: 2
+max_event: 100

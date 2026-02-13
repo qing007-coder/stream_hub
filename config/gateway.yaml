@@ -1,0 +1,5 @@
+name: "gateway"
+port: 8080
+service:
+  interaction_service: "interaction_master"
+  video_service: "video_master"

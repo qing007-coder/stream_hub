@@ -1,0 +1,30 @@
+worker_num: 2
+heartbeat_interval: 5000
+heartbeat_expiry: 15000
+concurrency: 20          # worker 并发数
+register_key: "scheduler:active_nodes:"
+death_key: "scheduler:death"
+
+queue:
+  critical: 6
+  default: 3
+  low: 1
+
+janitor:
+  heartbeat_interval: 10000 # 心跳间隔（10s）
+
+health:
+  threshold: 5
+  duration: 60000 # 这么长时间内到达阈值 则加入黑名单
+  blacklist_duration: 600000 # 黑名单持续时间
+  delay: 600000 # 给运维人员修复的时间 将黑名单的任务延时十分钟
+
+retry:
+  max_retries: 7         # 最大重试次数
+  base_delay_ms: 1000    # 初始退避时间（1s）
+  max_delay_ms: 60000    # 最大退避时间（60s）
+  enable_jitter: true    # 是否启用抖动
+
+dead_letter:
+  enabled: true
+  queue_key: "scheduler:dlq"
