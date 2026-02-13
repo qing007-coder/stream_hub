@@ -22,6 +22,12 @@ func NewMysql(conf *config.CommonConfig) (*DB, error) {
 	if err := m.AutoMigrate(
 		&storage.User{},
 		&storage.Task{},
+		&storage.FileModel{},
+		&storage.VideoModel{},
+		&storage.VideoLikeModel{},
+		&storage.VideoFavoriteModel{},
+		&storage.VideoCommentModel{},
+		&storage.UserFollowModel{},
 	); err != nil {
 		return nil, err
 	}

@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package stream_hub.search;
+
+option go_package = "./search";
+
+import "google/protobuf/timestamp.proto";
+
+// =======================
+// 搜索服务
+// =======================
+service SearchService {
+
+  // 搜索公开视频（Feed / 搜索页 / 推荐兜底）
+  rpc SearchVideos(SearchVideosRequest)
+      returns (SearchVideosResponse);
+
+  // 获取搜索联想词（可选）
+  rpc SuggestKeywords(SuggestKeywordsRequest)
+      returns (SuggestKeywordsResponse);
+}
+
+// =======================
+// 搜索结果视图（只给 Public）
+// =======================
+
+message SearchVideoInfo {
+  string id = 1;
+  string title = 2;
+  string cover_url = 3;
+  string author_id = 4;
+  int64 duration = 5;
+
+  // 搜索相关
+  float score = 6; // ES relevance score
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// =======================
+// 搜索请求
+// =======================
+
+message SearchVideosRequest {
+
+  // 搜索关键词
+  string keyword = 1;
+
+  // 分页
+  int32 page = 2;
+  int32 size = 3;
+
+  // 排序方式
+  SearchSortType sort = 4;
+
+  // 过滤条件
+  SearchFilter filter = 5;
+}
+
+// =======================
+// 搜索返回
+// =======================
+
+message SearchVideosResponse {
+  repeated SearchVideoInfo videos = 1;
+  int64 total = 2;
+}
+
+// =======================
+// 搜索过滤
+// =======================
+
+message SearchFilter {
+
+  // 作者过滤（点进某个作者主页）
+  string author_id = 1;
+
+  // 时间范围（秒级 unix）
+  int64 start_time = 2;
+  int64 end_time = 3;
+
+  // 视频时长范围（秒）
+  int64 min_duration = 4;
+  int64 max_duration = 5;
+}
+
+// =======================
+// 排序枚举
+// =======================
+
+enum SearchSortType {
+  SEARCH_SORT_DEFAULT = 0; // 综合（相关度 + 新鲜度）
+  SEARCH_SORT_LATEST  = 1; // 最新
+  SEARCH_SORT_HOT     = 2; // 热度（播放 / 点赞，后期接）
+}
+
+// =======================
+// 搜索联想
+// =======================
+
+message SuggestKeywordsRequest {
+  string prefix = 1;
+  int32 size = 2;
+}
+
+message SuggestKeywordsResponse {
+  repeated string keywords = 1;
+}

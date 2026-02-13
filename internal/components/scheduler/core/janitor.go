@@ -2,14 +2,12 @@ package core
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"log"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/model/config"
-	infra_ "stream_hub/pkg/model/infra"
 	"strings"
 	"time"
 )
@@ -106,18 +104,9 @@ func (j *Janitor) cleanup(workerID string) error {
 			return nil
 		}
 
-		data, err := j.rdb.HGet(context.Background(), "task:pool", taskID).Bytes()
-		if err != nil {
-			return err
-		}
-
-		var task infra_.TaskMessage
-		if err := json.Unmarshal(data, &task); err != nil {
-			return err
-		}
-
-		queue = fmt.Sprintf("scheduler:queue:%s", task.Priority)
-		if err := j.rdb.LPush(context.Background(), queue, task.TaskID); err != nil {
+		priority := j.rdb.HGet(context.Background(), "task:meta:"+taskID, "priority").Val()
+		queue = fmt.Sprintf("scheduler:queue:%s", priority)
+		if err := j.rdb.LPush(context.Background(), queue, taskID); err != nil {
 			return err
 		}
 	}

@@ -44,8 +44,10 @@ func (l *DistributedLock) Unlock(lock, key string) error {
 		return errors.New("unlock failed")
 	}
 
+	return l.rdb.Del(context.Background(), lock)
 }
 
+// 这个暂时不用 
 func (l *DistributedLock) watchDog() {
 
 }

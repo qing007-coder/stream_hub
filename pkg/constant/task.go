@@ -13,4 +13,6 @@ const (
 	TaskVideoAudit     = "video_audit"
 
 	TaskSendNotify = "send_notify"
+
+	TaskVideoToES = "video_to_es"
 )

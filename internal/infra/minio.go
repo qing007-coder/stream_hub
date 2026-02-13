@@ -7,7 +7,8 @@ import (
 )
 
 type Minio struct {
-	*minio.Client
+	Client *minio.Client
+	Core   *minio.Core
 }
 
 func NewMinio(conf *config.CommonConfig) (*Minio, error) {
@@ -18,5 +19,6 @@ func NewMinio(conf *config.CommonConfig) (*Minio, error) {
 
 	return &Minio{
 		client.Minio(),
+		client.Core(),
 	}, nil
 }

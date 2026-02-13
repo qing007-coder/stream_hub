@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package stream_hub.interaction;
+
+option go_package = "./interaction";
+
+import "google/protobuf/timestamp.proto";
+
+/*
+ * 互动服务
+ * - 点赞 / 收藏 / 评论 / 关注
+ * - 不包含观看、不包含转发
+ */
+service InteractionService {
+
+  // 点赞
+  rpc CreateLike(LikeRequest) returns (ActionResponse);
+  rpc DeleteLike(LikeRequest) returns (ActionResponse);
+  rpc IsLike(IsLikeRequest) returns (IsLikeResponse);
+  rpc ListLikes(ListLikesRequest) returns (ListLikesResponse);
+
+  // 收藏
+  rpc CreateFavorite(FavoriteRequest) returns (ActionResponse);
+  rpc DeleteFavorite(FavoriteRequest) returns (ActionResponse);
+  rpc IsFavorite(IsFavoriteRequest) returns (IsFavoriteResponse);
+
+  // 关注
+  rpc CreateFollow(FollowRequest) returns (ActionResponse);
+  rpc DeleteFollow(FollowRequest) returns (ActionResponse);
+  rpc IsFollow(IsFollowRequest) returns (IsFollowResponse);
+  rpc ListFollowers(ListFollowersRequest) returns (ListFollowersResponse);
+  rpc ListFollowings(ListFollowingsRequest) returns (ListFollowingsResponse);
+
+  // 评论
+  rpc CreateComment(CreateCommentRequest) returns (Comment);
+  rpc DeleteComment(DeleteCommentRequest) returns (ActionResponse);
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+}
+
+
+message ActionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UserView {
+  string  user_id   = 1;  // 用户ID
+  string nickname  = 2;  // 昵称
+  string avatar    = 3;  // 头像
+  string signature = 4;  // 个性签名
+}
+
+message LikeRequest {
+  string video_id = 1;
+}
+
+message IsLikeRequest {
+  string video_id = 1;
+}
+
+message IsLikeResponse {
+  bool is_like = 1;
+}
+
+message ListLikesRequest {
+  string video_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListLikesResponse {
+  repeated UserView users = 1;
+  int64 total = 2;
+}
+
+message FavoriteRequest {
+  string video_id = 1;
+}
+
+message IsFavoriteRequest {
+  string video_id = 1;
+}
+
+message IsFavoriteResponse {
+  bool is_favorite = 1;
+}
+
+message FollowRequest {
+  string target_user_id = 1;
+}
+
+message IsFollowRequest {
+  string target_user_id = 1;
+}
+
+message IsFollowResponse {
+  bool is_follow = 1;
+}
+
+message ListFollowersRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListFollowingsRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListFollowersResponse {
+  repeated UserView users = 1;
+  int64 total = 2;
+}
+
+message ListFollowingsResponse {
+  repeated UserView users = 1;
+  int64 total = 2;
+}
+
+message CreateCommentRequest {
+  string video_id = 1;
+  string content = 2;
+
+  string parent_id = 3;        // 一级评论传 "0"
+  string reply_to_user_id = 4; // 可选
+}
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+}
+
+message DeleteCommentResponse {
+  bool success = 1;
+}
+
+
+message Comment {
+  string id = 1;
+  string video_id = 2;
+  string user_id = 3;
+
+  // 冗余字段，用于展示
+  string nickname = 4;
+  string avatar = 5;
+
+  string content = 6;
+
+  string parent_id = 7;        // "0" 表示一级评论
+  string reply_to_user_id = 8; // 可选
+
+  int64 like_count = 9;        // 只读（无点赞接口）
+  int64 reply_count = 10;
+
+  int64 create_time = 11;
+}
+
+message ListCommentsRequest {
+  string video_id = 1;
+
+  int32 page = 2;
+  int32 page_size = 3;
+
+  // 一级评论 or 子评论
+  string parent_id = 4; // "0" 拉一级评论
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  int64 total = 2;
+  bool has_more = 3;
+}
+
+
+// protoc --proto_path=. --go_out=./interaction --go_opt=paths=source_relative --micro_out=./interaction --micro_opt=paths=source_relative interaction.proto

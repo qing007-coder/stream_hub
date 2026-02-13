@@ -56,10 +56,10 @@
 
 ## 四、 技术栈概览 (Tech Stack)
 
-| 类别 | 技术选型 |
-| :--- | :--- |
-| **后端框架** | Go (Gin, gRPC) |
-| **数据库** | MySQL 8.0 (元数据), ClickHouse (埋点) |
-| **缓存/中间件** | Redis, Kafka, ZooKeeper/Etcd |
-| **存储/工具** | MinIO (对象存储), FFmpeg (多媒体处理) |
-| **运维监控** | Prometheus, Grafana, Jaeger (链路追踪) |
+| 类别 | 技术选型                                 |
+| :--- |:-------------------------------------|
+| **后端框架** | Go (Gin, gRPC)                       |
+| **数据库** | MySQL 8.0 (元数据), ClickHouse (埋点)     |
+| **缓存/中间件** | Redis, Kafka, ZooKeeper/Etcd         |
+| **存储/工具** | MinIO (对象存储), FFmpeg (多媒体处理)         |
+| **运维监控** | Prometheus, Grafana, tracer (自研链路追踪) |

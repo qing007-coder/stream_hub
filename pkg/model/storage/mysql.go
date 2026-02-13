@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"gorm.io/gorm"
 	"stream_hub/pkg/utils"
 	"time"
@@ -21,10 +22,9 @@ func (b *BaseModel) BeforeCreate(tx *gorm.DB) error {
 // User 基础信息表
 type User struct {
 	BaseModel
-	Account       string `gorm:"type:varchar(64);uniqueIndex;not null" json:"account"` // 唯一账户
-	Password      string `gorm:"type:varchar(255);not null" json:"-"`                  // 密码
-	Email         string `gorm:"type:varchar(128);uniqueIndex" json:"email"`           // 邮箱
-	Nickname      string `gorm:"type:varchar(64)" json:"nickname"`                     // 昵称
+	Password      string `gorm:"type:varchar(255);not null" json:"-"`        // 密码
+	Email         string `gorm:"type:varchar(128);uniqueIndex" json:"email"` // 邮箱
+	Nickname      string `gorm:"type:varchar(64)" json:"nickname"`           // 昵称
 	BackgroundURL string `gorm:"type:varchar(255)" json:"background_url"`
 	Avatar        string `gorm:"type:varchar(255)" json:"avatar"`      // 头像URL
 	Signature     string `gorm:"type:varchar(255)" json:"signature"`   // 个人签名
@@ -45,9 +45,7 @@ type User struct {
 
 // Task 统一任务表
 type Task struct {
-	ID        string    `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	BaseModel
 	// 任务类型
 	Type string `gorm:"type:varchar(64);not null;index" json:"type"`
 	// 示例：send_email_code / video_transcode / video_audit
@@ -71,6 +69,10 @@ type Task struct {
 
 	// 下次执行时间（支持延迟任务）
 	NextRunAt int64 `gorm:"index" json:"next_run_at"`
+
+	// ===== 运维 & 扩展 =====
+	Executor string `gorm:"type:varchar(64);comment:执行节点"`
+	Remark   string `gorm:"type:varchar(255);comment:人工备注"`
 }
 
 // FileModel 物理文件表：记录 MinIO 中的实际文件信息
@@ -93,14 +95,57 @@ func (FileModel) TableName() string {
 // 多个用户上传同一个视频，会有多条记录，但指向同一个 FileHash
 type VideoModel struct {
 	BaseModel
-	Title       string `gorm:"type:varchar(100);not null;comment:视频标题"`
-	Description string `gorm:"type:text;comment:视频简介"`
-	AuthorID    string `gorm:"index;comment:上传者用户ID"`
-	FileHash    string `gorm:"type:varchar(64);index;comment:关联文件表的哈希"`
-	CoverUrl    string `gorm:"type:varchar(255);comment:封面图地址"`
-	Status      int    `gorm:"default:0;comment:0-待审核 1-审核通过 2-审核未通过"`
+	Title           string          `gorm:"type:varchar(100);not null;comment:视频标题"`
+	Description     string          `gorm:"type:text;comment:视频简介"`
+	AuthorID        string          `gorm:"index;comment:上传者用户ID"`
+	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用"`
+	CoverUrl        string          `gorm:"type:varchar(255);comment:封面图地址"`
+	Status          int             `gorm:"default:0;comment:0-待审核 1-审核通过 2-审核未通过"`
+	IsPublic        int             `gorm:"default:0;comment:0-私密 1-开放"`
+	Duration        int64           `gorm:"comment:视频时长(秒)"`
+	VideoMeta       json.RawMessage `gorm:"type:json;not null;comment:视频原始元数据"`
+}
+
+func (v *VideoModel) BeforeCreate(tx *gorm.DB) error {
+	if err := v.BaseModel.BeforeCreate(tx); err != nil {
+		return err
+	}
+
+	if len(v.VideoMeta) == 0 {
+		v.VideoMeta = json.RawMessage(`{}`)
+	}
+	return nil
 }
 
 func (VideoModel) TableName() string {
 	return "user_videos"
+}
+
+type VideoLikeModel struct {
+	BaseModel
+	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:点赞用户ID"`
+	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID"`
+}
+
+type VideoFavoriteModel struct {
+	BaseModel
+
+	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:收藏用户ID"`
+	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID"`
+}
+
+type UserFollowModel struct {
+	BaseModel
+
+	UserID       string `gorm:"type:varchar(32);index:idx_user_target,unique;comment:关注者"`
+	TargetUserID string `gorm:"type:varchar(32);index:idx_user_target,unique;index;comment:被关注者"`
+}
+
+type VideoCommentModel struct {
+	BaseModel
+
+	VideoID  string `gorm:"type:varchar(32);index;comment:视频ID"`
+	UserID   string `gorm:"type:varchar(32);index;comment:评论用户ID"`
+	Content  string `gorm:"type:text;comment:评论内容"`
+	ParentID string `gorm:"type:varchar(32);index;comment:父评论ID，一级评论为空"`
 }

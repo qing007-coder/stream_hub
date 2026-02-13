@@ -3,6 +3,7 @@ package core
 import (
 	"math/rand"
 	"sync"
+	"fmt"
 	"time"
 )
 
@@ -14,9 +15,10 @@ type Picker struct {
 
 func NewQueuePicker(weights map[string]int) *Picker {
 	var pool []string
-	for queueName, weight := range weights {
+	for priority, weight := range weights {
 		for i := 0; i < weight; i++ {
-			pool = append(pool, queueName)
+			queue := fmt.Sprintf("scheduler:queue:%s", priority)
+			pool = append(pool, queue)
 		}
 	}
 

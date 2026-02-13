@@ -41,7 +41,7 @@ func (u *UserApi) Login(ctx *gin.Context) {
 	}
 
 	var user storage.User
-	if err := u.DB.Where("account = ?", req.Account).First(&user).Error; err != nil {
+	if err := u.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		utils.BadRequest(ctx, err.Error())
 		return
 	}
@@ -75,8 +75,7 @@ func (u *UserApi) Login(ctx *gin.Context) {
 }
 
 func (u *UserApi) Logout(ctx *gin.Context) {
-	//uid := ctx.GetString("user_id")
-	uid := "2018612652892229632"
+	uid := ctx.GetString("user_id")
 	data, err := u.Redis.Get(context.Background(), uid)
 	if err != nil {
 		utils.BadRequest(ctx, "redis get failed")
@@ -105,12 +104,6 @@ func (u *UserApi) Register(ctx *gin.Context) {
 		return
 	}
 
-	u.DB.Model(&storage.User{}).Where("account = ?", req.Account).Count(&count)
-	if count > 0 {
-		utils.BadRequest(ctx, "账户已存在")
-		return
-	}
-
 	data, err := u.Redis.Get(context.Background(), req.Email)
 	if err != nil {
 		utils.BadRequest(ctx, err.Error())
@@ -128,7 +121,6 @@ func (u *UserApi) Register(ctx *gin.Context) {
 	}
 
 	user := storage.User{
-		Account:  req.Account,
 		Password: string(password),
 		Email:    req.Email,
 		Nickname: "匿名用户" + utils.CreateID(),
@@ -178,26 +170,13 @@ func (u *UserApi) SendVerificationCode(ctx *gin.Context) {
 		utils.BadRequest(ctx, utils.MessageInvalidBody)
 		return
 	}
-
-	id := utils.CreateUUID()
-
 	if err := u.TaskSender.SendTask(infra_.TaskMessage{
-		TaskID:  id,
-		Type:    constant.TaskSendEmailCode,
-		Payload: req.Email,
+		Type: constant.TaskSendEmailCode,
+		//Payload: req.Email,
 	}); err != nil {
 		utils.BadRequest(ctx, "send task failed")
 		return
 	}
-
-	u.DB.Create(&storage.Task{
-		ID:        id,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Type:      constant.TaskSendEmailCode,
-		Status:    0,
-		Payload:   req.Email,
-	})
 
 	utils.StatusOK(ctx, nil, "send verification code successfully")
 }
@@ -276,7 +255,6 @@ func (u *UserApi) GetUserProfile(ctx *gin.Context) {
 	u.DB.Where("id = ?", uid).First(&user)
 
 	utils.StatusOK(ctx, api.GetUserProfileResp{
-		Account:        user.Account,
 		Email:          user.Email,
 		Nickname:       user.Nickname,
 		BackgroundUrl:  user.BackgroundURL,

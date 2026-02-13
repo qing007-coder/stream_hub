@@ -1,5 +1,5 @@
 package constant
 
 const (
-	Video = "video"
+	ESVideo = "video"
 )

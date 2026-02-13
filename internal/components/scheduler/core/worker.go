@@ -8,7 +8,6 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 	"log"
-	"strconv"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/config"
@@ -61,24 +60,32 @@ func (w *Worker) Start() {
 				continue
 			}
 
-			data, err := w.rdb.HGet(context.Background(), " task:pool", taskID[1]).Bytes()
+			pipeline := w.rdb.Pipeline()
+			meta, _ := pipeline.HGetAll(context.Background(), "task:meta:"+taskID[1]).Result()
+			data, _ := pipeline.Get(context.Background(), "task:payload:"+taskID[1]).Bytes()
+
+			_, err = pipeline.Exec(context.Background())
 			if err != nil {
 				log.Println("err:", err)
 				continue
 			}
 
-			var task infra_.TaskMessage
-			if err := json.Unmarshal(data, &task); err != nil {
-				w.retryTask(&task, err)
+			var payload infra_.TaskPayload
+			if err := json.Unmarshal(data, &payload); err != nil {
+				log.Println("err:", err)
 				continue
 			}
 
-			if w.taskHealth.Check(&task) {
-				w.taskHealth.HandleBlackList(&task)
+			task := new(infra_.TaskMessage)
+			task.TransformByMap(meta)
+			task.Payload = payload
+
+			if w.taskHealth.Check(task) {
+				w.taskHealth.HandleBlackList(task)
 				continue
 			}
 
-			w.execute(&task)
+			w.execute(task)
 		}
 	}()
 }
@@ -94,7 +101,7 @@ func (w *Worker) fetch() {
 			continue
 		}
 
-		if err := w.rdb.LPush(context.Background(), queue, taskID[1]); err != nil {
+		if err := w.rdb.LPush(context.Background(), w.activeQueue, taskID[1]); err != nil {
 			log.Println("err:", err)
 			continue
 		}
@@ -109,25 +116,14 @@ func (w *Worker) execute(task *infra_.TaskMessage) {
 		return
 	}
 
-	retryCount := w.rdb.HGet(context.Background(), "task:retry_count", task.TaskID).Val()
-	pipeline := w.rdb.Pipeline()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	pipeline.HDel(ctx, "task:retry_count", task.TaskID)
-	pipeline.HDel(ctx, "task:pool", task.TaskID)
-
-	_, err := pipeline.Exec(ctx)
-	if err != nil {
+	if err := w.rdb.Del(context.Background(), "task:meta:"+task.TaskID, "task:payload:"+task.TaskID); err != nil {
 		log.Println("err:", err)
-		return
+		return 
 	}
-
-	count, _ := strconv.Atoi(retryCount)
 
 	if err := w.db.Model(&storage.Task{}).Where("id = ?", task.TaskID).Updates(map[string]interface{}{
 		"status":      constant.TaskSuccess,
-		"retry_count": count,
+		"retry_count": task.RetryCount,
 	}).Error; err != nil {
 		log.Println("db.Updates err:", err)
 		return

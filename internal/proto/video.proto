@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package stream_hub.video;
+
+option go_package = "./video";
+
+import "google/protobuf/timestamp.proto";
+
+service VideoService {
+
+  // 创建视频（作者）
+  rpc CreateVideo(CreateVideoRequest) returns (AuthorVideoInfo);
+
+  // 获取视频详情
+  // - 作者：返回 AuthorVideoInfo
+  // - 非作者：返回 PublicVideoInfo
+  rpc GetVideo(GetVideoRequest) returns (GetVideoResponse);
+
+  // 更新视频元数据（仅作者）
+  rpc UpdateVideo(UpdateVideoRequest) returns (AuthorVideoInfo);
+
+  // 删除视频（仅作者）
+  rpc DeleteVideo(DeleteVideoRequest) returns (DeleteVideoResponse);
+
+  // 获取某用户的公开视频列表（访客视角）
+  rpc ListUserPublishedVideos(ListUserPublishedVideosRequest)
+      returns (ListUserPublishedVideosResponse);
+
+  // 获取我自己的视频列表（作者视角）
+  rpc ListMyVideos(ListMyVideosRequest)
+      returns (ListMyVideosResponse);
+}
+
+// ---------- 公开视频视图（给 Feed / 访客 / 推荐） ----------
+message PublicVideoInfo {
+  string id = 1;
+  string title = 2;
+  string cover_url = 3;
+  string author_id = 4;
+  int64 duration = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// ---------- 作者视图（我的视频 / 管理后台） ----------
+message AuthorVideoInfo {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string cover_url = 4;
+
+  int32 status = 5;      // 0-待审核 1-通过 2-拒绝
+  int32 is_public = 6;   // 0-私密 1-公开
+  int64 duration = 7;
+
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// ---------- 内部完整模型（仅服务内部 / 管理端使用） ----------
+message InternalVideoInfo {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string author_id = 4;
+
+  string source_object_key = 5; // MinIO / OSS 内部引用
+  string cover_url = 6;
+
+  int32 status = 7;
+  int32 is_public = 8;
+  int64 duration = 9;
+
+  string video_meta = 10; // JSON：分辨率 / 编码 / 码率等
+
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message GetVideoResponse {
+  oneof data {
+    PublicVideoInfo public_video = 1;
+    AuthorVideoInfo author_video = 2;
+  }
+}
+
+// 创建视频
+message CreateVideoRequest {
+  string title = 1;
+  string description = 2;
+  string source_object_key = 3;
+  string cover_url = 4;
+}
+
+// 获取视频
+message GetVideoRequest {
+  string video_id = 1;
+}
+
+// 更新视频
+message UpdateVideoRequest {
+  string video_id = 1;
+  string title = 2;
+  string description = 3;
+  string cover_url = 4;
+  int32 is_public = 5;
+}
+
+// 删除视频
+message DeleteVideoRequest {
+  string video_id = 1;
+}
+
+message DeleteVideoResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 查看某个用户的公开视频（访客）
+message ListUserPublishedVideosRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListUserPublishedVideosResponse {
+  repeated PublicVideoInfo videos = 1;
+  int64 total = 2;
+}
+
+// 查看我自己的视频（作者）
+message ListMyVideosRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListMyVideosResponse {
+  repeated AuthorVideoInfo videos = 1;
+  int64 total = 2;
+}
+
+// protoc --proto_path=. --go_out=./video --go_opt=paths=source_relative --micro_out=./video --micro_opt=paths=source_relative video.proto
