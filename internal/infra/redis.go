@@ -108,6 +108,14 @@ func (r *Redis) ZRangeArgsWithScores(ctx context.Context, z redis.ZRangeArgs) ([
 	return r.Client.ZRangeArgsWithScores(ctx, z).Result()
 }
 
+func (r *Redis) ZRangeByScore(ctx context.Context, key string, opt *redis.ZRangeBy) *redis.StringSliceCmd {
+	return r.Client.ZRangeByScore(ctx, key, opt)
+}
+
+func (r *Redis) ZRem(ctx context.Context, key string, members ...interface{}) *redis.IntCmd {
+	return r.Client.ZRem(ctx, key, members...)
+}
+
 func (r *Redis) ZCard(ctx context.Context, key string) (int64, error) {
 	return r.Client.ZCard(ctx, key).Result()
 }
