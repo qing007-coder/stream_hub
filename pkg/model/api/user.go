@@ -1,7 +1,7 @@
 package api
 
 type LoginReq struct {
-	Account  string `json:"account"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -14,7 +14,6 @@ type RefreshTokenReq struct {
 }
 
 type RegisterReq struct {
-	Account          string `json:"account"`
 	Password         string `json:"password"`
 	Email            string `json:"email"`
 	VerificationCode string `json:"verification_code"`
@@ -34,7 +33,6 @@ type UpdatePasswordReq struct {
 }
 
 type GetUserProfileResp struct {
-	Account        string `json:"account"`
 	Email          string `json:"email"`
 	Nickname       string `json:"nickname"`
 	BackgroundUrl  string `json:"background_url"`

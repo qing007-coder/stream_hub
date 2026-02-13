@@ -33,7 +33,7 @@ func InternalServerError(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusInternalServerError,
 		"data":    nil,
-		"message": "internal server error",
+		"message": "core server error",
 	})
 
 	ctx.Abort()

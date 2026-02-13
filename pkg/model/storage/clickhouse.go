@@ -1,5 +1,7 @@
 package storage
 
+import "time"
+
 // UserLogEntry 对应 ClickHouse 中的日志表结构
 type UserLogEntry struct {
 	EventTime float64 `json:"event_time" ck:"event_time,million2time"` // 事件发生时间
@@ -23,4 +25,25 @@ type SystemLogEntry struct {
 	Module    string  `json:"module" ck:"module"`   // 哪个模块
 	Payload   string  `json:"payload" ck:"payload"` // 根据 Type 的不同，这里存放上述不同的结构体
 	Msg       string  `json:"msg,omitempty" ck:"msg"`
+}
+
+type Event struct {
+	// 基础元信息
+	EventID   string `ck:"event_id"`
+	EventType string `ck:"event_type"`
+
+	// 用户相关
+	UserID string `ck:"user_id"`
+
+	// 资源定位
+	ResourceType string `ck:"resource_type"` // video / comment / user
+	ResourceID   string `ck:"resource_id"`
+
+	// 时间
+	Timestamp int64     `ck:"timestamp"`  // 秒级时间戳
+	EventTime time.Time `ck:"event_time"` // 冗余，CK 用 DateTime
+
+	// 扩展字段（拍平，避免 Map）
+	Source string `ck:"source"` // feed / profile / search
+	Client string `ck:"client"` // web / ios / android
 }
