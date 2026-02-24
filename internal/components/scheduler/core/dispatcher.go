@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"stream_hub/internal/infra"
-	"stream_hub/pkg/model/config"
 	errors_ "stream_hub/pkg/errors"
+	"stream_hub/pkg/model/config"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -18,6 +19,8 @@ type Dispatcher struct {
 	queue string 
 	batchSize int
 	lock *DistributedLock
+	ticker *time.Ticker
+	scanInterval time.Duration
 }
 
 func NewDispatcher(rdb *infra.Redis, conf *config.SchedulerConfig) *Dispatcher {
@@ -26,6 +29,20 @@ func NewDispatcher(rdb *infra.Redis, conf *config.SchedulerConfig) *Dispatcher {
 		queue: conf.Dispatcher.Queue,
 		batchSize: conf.Dispatcher.BatchSize,
 		lock: NewDistributedLock(rdb, conf),
+		scanInterval: time.Duration(conf.Dispatcher.ScanInterval)*time.Millisecond,
+	}
+}
+
+func (d *Dispatcher) Start() {
+	d.ticker = time.NewTicker(d.scanInterval)
+	for {
+		select {
+		case <- d.ticker.C:
+			log.Println("dispatcher is scanning")
+			if err := d.Scan(context.Background()); err != nil {
+				log.Println("err:", err)
+			}
+		}
 	}
 }
 

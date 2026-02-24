@@ -280,7 +280,13 @@ func (m *MediaApi) CompleteUpload(ctx *gin.Context) {
 	if err := m.TaskSender.SendTask(infra_.TaskMessage{
 		Type:    constant.TaskVideoTranscode,
 		BizID:   video.ID,
-		Payload: data["file_name"],
+		Priority: "critical",
+		RetryCount: 0,
+		Payload: infra_.TaskPayload{
+			Operator: "",
+			Source: constant.Media,
+			Data: nil,
+		},
 	}); err != nil {
 		utils.InternalServerError(ctx)
 		return

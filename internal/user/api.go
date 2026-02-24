@@ -172,7 +172,14 @@ func (u *UserApi) SendVerificationCode(ctx *gin.Context) {
 	}
 	if err := u.TaskSender.SendTask(infra_.TaskMessage{
 		Type: constant.TaskSendEmailCode,
-		//Payload: req.Email,
+		BizID: req.Email,
+		Priority: "critical",
+		RetryCount: 0,
+		Payload: infra_.TaskPayload{
+			Operator: "",
+			Source: constant.User,
+			Data: nil,
+		},
 	}); err != nil {
 		utils.BadRequest(ctx, "send task failed")
 		return

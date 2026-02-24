@@ -54,19 +54,28 @@ func (t *TaskHealth) HandleError(task *infra_.TaskMessage) error {
 
 	pipeline := t.rdb.Pipeline()
 	pipeline.SAdd(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type), task.TaskID)
-	count, _ := t.rdb.SCard(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type))
-	if count == 1 {
-		pipeline.Expire(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type), t.duration)
-	}
-
-	if count >= int64(t.threshold) {
-		pipeline.Del(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type))
-		pipeline.Set(ctx, fmt.Sprintf("scheduler:blacklist:%s", task.Type), 1, t.blacklistDuration)
-	}
+	countCmd := pipeline.SCard(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type))
 
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return err
+	}
+
+	count, _ := countCmd.Result()
+
+	if count == 1 {
+		if err := t.rdb.Expire(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type), t.duration); err != nil {
+			log.Println("err:", err)
+		}
+	}
+
+	if count >= int64(t.threshold) {
+		if err := t.rdb.Del(ctx, fmt.Sprintf("scheduler:failed:%s", task.Type)); err != nil {
+			log.Println("err:", err)
+		}
+		if err := t.rdb.Set(ctx, fmt.Sprintf("scheduler:blacklist:%s", task.Type), 1, t.blacklistDuration); err != nil {
+			log.Println("err:", err)
+		}
 	}
 
 	return nil
