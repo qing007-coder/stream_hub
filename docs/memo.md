@@ -21,3 +21,5 @@
 ### 任务调度器里面可以加上任务的超时机制 把任务执行时 放到一个zset里面 janitor扫描这个zset 发现超时则通知node去kill他（通过context） 然后把任务捞出来  可以后期做 目前先做mvp
 #### dispatcher 别忘了加上分布式锁
 #### task:pool这种存任务的设计可以换成task:meta:task_id和task:payload:task_id 然后retry啥的都得改
+
+### 分布式锁可以考虑用乐观锁
