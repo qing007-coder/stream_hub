@@ -10,6 +10,15 @@ queue:
   default: 3
   low: 1
 
+lock:
+  detect_interval: 1000
+  wait_deadline: 15000
+  lock_timeout: 10000
+
+dispatcher:
+  queue: "task:delay"
+  batch_size: 500
+
 janitor:
   heartbeat_interval: 10000 # 心跳间隔（10s）
 
