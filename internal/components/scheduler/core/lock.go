@@ -2,9 +2,11 @@ package core
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"stream_hub/internal/infra"
+	"stream_hub/pkg/errors"
+	errors_ "stream_hub/pkg/errors"
+	"stream_hub/pkg/model/config"
 	"stream_hub/pkg/utils"
 	"time"
 )
@@ -12,14 +14,21 @@ import (
 type DistributedLock struct {
 	rdb     *infra.Redis
 	timeout time.Duration
+	detectInterval time.Duration
+	deadline time.Duration
 }
 
-func NewDistributedLock(rdb *infra.Redis, timeout time.Duration) *DistributedLock {
-	return &DistributedLock{rdb: rdb}
+func NewDistributedLock(rdb *infra.Redis, conf *config.SchedulerConfig) *DistributedLock {
+	return &DistributedLock{
+		rdb: rdb,
+		timeout: time.Duration(conf.Lock.LockTimeout) * time.Millisecond,
+		deadline: time.Duration(conf.Lock.WaitDeadline) * time.Millisecond,
+		detectInterval: time.Duration(conf.Lock.DetectInterval) * time.Millisecond,
+	}
 }
 
-func (l *DistributedLock) Lock(key string) (string, error) {
-	lock := fmt.Sprintf("lock:%s", key)
+func (l *DistributedLock) Lock(resource string) (string, error) {
+	lock := fmt.Sprintf("lock:%s", resource)
 	id := utils.CreateUUID()
 	success, err := l.rdb.SetNX(context.Background(), lock, id, l.timeout)
 	if err != nil {
@@ -27,7 +36,7 @@ func (l *DistributedLock) Lock(key string) (string, error) {
 	}
 
 	if !success {
-		return "", errors.New("distributed lock timeout")
+		return "", errors_.ErrKeyExists
 	}
 
 	return id, nil
@@ -41,10 +50,33 @@ func (l *DistributedLock) Unlock(lock, key string) error {
 	}
 
 	if string(data) != key {
-		return errors.New("unlock failed")
+		return errors_.ErrInvalidValue
 	}
 
 	return l.rdb.Del(context.Background(), lock)
+}
+
+func (l *DistributedLock) Wait(lock string) error {
+	ticker := time.NewTicker(l.detectInterval)
+	deadlineTimer := time.NewTimer(l.deadline)
+	lock = fmt.Sprintf("lock:%s", lock)
+	for {
+		select {
+		case <-ticker.C:
+			isExisted, err := l.rdb.IsExisted(context.Background(), lock)
+			if err != nil {
+				return err
+			}
+
+			if isExisted {
+				continue
+			}
+
+			return nil
+		case <- deadlineTimer.C:
+			return errors.ErrWaitTimeout
+		}
+	}
 }
 
 // 这个暂时不用 

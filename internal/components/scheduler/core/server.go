@@ -41,7 +41,7 @@ func NewServer(db *gorm.DB, rdb *infra.Redis, conf *config.SchedulerConfig) *Ser
 	for i := 0; i < server.workerNum; i++ {
 		workerID := utils.CreateUUID()
 		worker := NewWorker(workerID, db, rdb, conf, workerDeathChan)
-		server.workerPool[workerID] = worker
+		server.workerPool[workerID] = worker  
 	}
 
 	return server

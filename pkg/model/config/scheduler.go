@@ -1,18 +1,19 @@
 package config
 
 type SchedulerConfig struct {
-	WorkerNum         int            `mapstructure:"worker_num"`
-	HeartbeatExpiry   int            `mapstructure:"heartbeat_expiry"`
-	HeartbeatInterval int            `mapstructure:"heartbeat_interval"`
-	Concurrency       int            `mapstructure:"concurrency"`
-	RegisterKey       string         `mapstructure:"register_key"`
-	DeathKey          string         `mapstructure:"death_key"`
-	Queue             map[string]int `mapstructure:"queue"`
-	Health            HealthConfig   `mapstructure:"health"`
-	Janitor           JanitorConfig  `mapstructure:"janitor"`
-
-	Retry      RetryConfig      `mapstructure:"retry"`
-	DeadLetter DeadLetterConfig `mapstructure:"dead_letter"`
+	WorkerNum         int              `mapstructure:"worker_num"`
+	HeartbeatExpiry   int              `mapstructure:"heartbeat_expiry"`
+	HeartbeatInterval int              `mapstructure:"heartbeat_interval"`
+	Concurrency       int              `mapstructure:"concurrency"`
+	RegisterKey       string           `mapstructure:"register_key"`
+	DeathKey          string           `mapstructure:"death_key"`
+	Queue             map[string]int   `mapstructure:"queue"`
+	Health            HealthConfig     `mapstructure:"health"`
+	Janitor           JanitorConfig    `mapstructure:"janitor"`
+	Lock              Lock             `mapstructure:"lock"`
+	Dispatcher        Dispatcher       `mapstructure:"dispatcher"`
+	Retry             RetryConfig      `mapstructure:"retry"`
+	DeadLetter        DeadLetterConfig `mapstructure:"dead_letter"`
 }
 
 type HealthConfig struct {
@@ -20,6 +21,17 @@ type HealthConfig struct {
 	Duration          int `mapstructure:"duration"`
 	BlacklistDuration int `mapstructure:"blacklist_duration"`
 	Delay             int `mapstructure:"delay"`
+}
+
+type Lock struct {
+	DetectInterval int `mapstructure:"detect_interval"`
+	WaitDeadline   int `mapstructure:"wait_deadline"`
+	LockTimeout    int `mapstructure:"lock_timeout"`
+}
+
+type Dispatcher struct {
+	Queue     string `mapstructure:"queue"`
+	BatchSize int    `mapstructure:"batch_size"`
 }
 
 type JanitorConfig struct {

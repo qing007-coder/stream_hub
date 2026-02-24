@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"stream_hub/internal/infra"
+	"stream_hub/pkg/model/config"
+	errors_ "stream_hub/pkg/errors"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -15,15 +17,33 @@ type Dispatcher struct {
 	rdb *infra.Redis
 	queue string 
 	batchSize int
+	lock *DistributedLock
 }
 
-func NewDispatcher(rdb *infra.Redis) *Dispatcher {
+func NewDispatcher(rdb *infra.Redis, conf *config.SchedulerConfig) *Dispatcher {
 	return &Dispatcher{
 		rdb: rdb,
+		queue: conf.Dispatcher.Queue,
+		batchSize: conf.Dispatcher.BatchSize,
+		lock: NewDistributedLock(rdb, conf),
 	}
 }
 
 func (d *Dispatcher) Scan(ctx context.Context) error {
+	resource := "scheduler:dispathcer"
+	id, err := d.lock.Lock(resource)
+	if err != nil {
+		if errors.Is(err, errors_.ErrKeyExists) {
+			if err := d.lock.Wait(resource); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	defer d.lock.Unlock(resource, id)
+
 	now := strconv.FormatInt(time.Now().Unix(), 10)
 
 	taskIDs, err := d.rdb.ZRangeByScore(ctx, d.queue, &redis.ZRangeBy{
