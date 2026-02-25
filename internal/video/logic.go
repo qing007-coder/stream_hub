@@ -54,8 +54,16 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 	})
 
 	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:  constant.TaskVideoToES,
-		BizID: model.ID,
+		Type:    constant.TaskVideoToES,
+		BizID:   model.ID,
+		Priority: "critical",
+		RetryCount: 0,
+		Payload: infra_.TaskPayload{
+			Operator: "",
+			Action: constant.ActionCreate,
+			Source: constant.Video,
+			Data: nil,
+		},
 	})
 }
 
@@ -116,8 +124,16 @@ func (v *Video) UpdateVideo(ctx context.Context, req *video.UpdateVideoRequest, 
 	v.fillAuthorVideoInfo(resp, &model)
 
 	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:  constant.TaskVideoToES,
-		BizID: model.ID,
+		Type:    constant.TaskVideoToES,
+		BizID:   model.ID,
+		Priority: "critical",
+		RetryCount: 0,
+		Payload: infra_.TaskPayload{
+			Operator: "",
+			Action: constant.ActionUpdate,
+			Source: constant.Video,
+			Data: nil,
+		},
 	})
 }
 
@@ -137,8 +153,16 @@ func (v *Video) DeleteVideo(ctx context.Context, req *video.DeleteVideoRequest, 
 	resp.Message = "ok"
 
 	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:  constant.TaskVideoToES,
-		BizID: req.VideoId,
+		Type:    constant.TaskVideoToES,
+		BizID:   req.VideoId,
+		Priority: "critical",
+		RetryCount: 0,
+		Payload: infra_.TaskPayload{
+			Operator: "",
+			Action: constant.ActionDelete,
+			Source: constant.Video,
+			Data: nil,
+		},
 	})
 }
 

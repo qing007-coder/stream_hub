@@ -16,12 +16,14 @@ import (
 type Middleware struct {
 	auth *security.Auth
 	*infra.Base
+	ratelimiter *infra.Ratelimter
 }
 
-func NewMiddleware(base *infra.Base, auth *security.Auth) *Middleware {
+func NewMiddleware(base *infra.Base, ratelimiter *infra.Ratelimter, auth *security.Auth) *Middleware {
 	return &Middleware{
 		auth: auth,
 		Base: base,
+		ratelimiter: ratelimiter,
 	}
 }
 
@@ -126,5 +128,24 @@ func (m *Middleware) Auth() gin.HandlerFunc {
 		}
 
 		ctx.Set("user_id", claims.UserID)
+	}
+}
+
+func (m *Middleware) Ratelimit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		isAllowed, err := m.ratelimiter.Allow()
+		if err != nil {
+			utils.InternalServerError(ctx)
+			ctx.Abort()
+			return 
+		}
+
+		if !isAllowed {
+			utils.BadRequest(ctx, "rate limit")
+			ctx.Abort()
+			return 
+		}
+
+		ctx.Next()
 	}
 }
