@@ -55,3 +55,8 @@ minio:
 mongodb:
   addr: "192.168.233.128"
   port: "27017"
+
+ratelimiter:
+  window_size: 10000
+  base_limit: 200
+  script_path: "./script/ratelimiter/sliding_window.lua"

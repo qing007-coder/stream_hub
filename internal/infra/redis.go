@@ -139,3 +139,11 @@ func (r *Redis) BRPop(ctx context.Context, timeout time.Duration, keys ...string
 func (r *Redis) Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd {
 	return r.Client.Scan(ctx, cursor, match, count)
 }
+
+func (r *Redis) ScriptLoad(ctx context.Context, script string) (string, error) {
+	return r.Client.ScriptLoad(ctx, script).Result()
+}
+
+func (r *Redis) EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) (bool, error) {
+	return r.Client.EvalSha(ctx, sha1, keys, args...).Bool()
+}

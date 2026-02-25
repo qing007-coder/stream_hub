@@ -48,7 +48,7 @@ func (c *CommonTaskHandler) EmailHandler(ctx context.Context, task *infra_.TaskM
 
 func (c *CommonTaskHandler) TranscodeHandler(ctx context.Context, task *infra_.TaskMessage) error {
 	var media storage.FileModel
-	if err := c.DB.Where("id = ?", task.BizID).First(media).Error; err != nil {
+	if err := c.DB.Where("id = ?", task.BizID).First(&media).Error; err != nil {
 		return err
 	}
 
