@@ -28,13 +28,13 @@ type GatewayRouter struct {
 	port       int
 }
 
-func NewGatewayRouter(base *infra.Base, auth *security.Auth, commonConf *config.CommonConfig, conf *config.GatewayConfig) *GatewayRouter {
+func NewGatewayRouter(base *infra.Base, auth *security.Auth, ratelimiter *infra.Ratelimter, commonConf *config.CommonConfig, conf *config.GatewayConfig) *GatewayRouter {
 	srv := NewService(commonConf)
 
 	router := &GatewayRouter{
 		port:       conf.Port,
 		gateway:    NewGateway(base, srv, conf),
-		middleware: NewMiddleware(base, auth),
+		middleware: NewMiddleware(base, ratelimiter, auth),
 	}
 
 	router.init()
@@ -45,7 +45,7 @@ func NewGatewayRouter(base *infra.Base, auth *security.Auth, commonConf *config.
 func (r *GatewayRouter) init() {
 	r.router = gin.Default()
 	api := r.router.Group("/api")
-	api.Use(r.middleware.Cors(), r.middleware.LogToStorage())
+	api.Use(r.middleware.Cors(), r.middleware.Ratelimit(), r.middleware.LogToStorage())
 	{
 		// Video API
 		video := api.Group("/video")

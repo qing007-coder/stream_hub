@@ -16,3 +16,9 @@ const (
 
 	TaskVideoToES = "video_to_es"
 )
+
+const (
+	ActionCreate = "action_create"
+	ActionUpdate = "action_update"
+	ActionDelete = "action_delete"
+)

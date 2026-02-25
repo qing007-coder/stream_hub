@@ -6,6 +6,7 @@ import (
 	"stream_hub/internal/infra"
 	"stream_hub/internal/security"
 	"stream_hub/pkg/config"
+	"stream_hub/pkg/constant"
 )
 
 func main() {
@@ -29,7 +30,13 @@ func main() {
 
 	auth := security.NewAuth(commonConf)
 
-	router := gateway.NewGatewayRouter(base, auth, commonConf, gatewayConf)
+	ratelimiter, err := infra.NewRatelimiter(base.Redis, constant.Gateway, commonConf)
+	if err != nil {
+		fmt.Println("err:", err)
+		return
+	}
+
+	router := gateway.NewGatewayRouter(base, auth, ratelimiter, commonConf, gatewayConf)
 	if err := router.Run(); err != nil {
 		fmt.Println("err:", err)
 		return
