@@ -39,3 +39,13 @@ func (t *TaskMessage) TransformByMap(data map[string]string) error {
 
 	return nil
 }
+
+func (t *TaskMessage) StructToMap() map[string]interface{} {
+    return map[string]interface{}{
+        "task_id":     t.TaskID,
+        "type":        t.Type,
+        "biz_id":      t.BizID,
+        "priority":    t.Priority,
+        "retry_count": t.RetryCount,
+    }
+}

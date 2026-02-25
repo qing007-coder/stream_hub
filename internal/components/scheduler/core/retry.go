@@ -34,8 +34,16 @@ func (r *Retry) retry(task *infra_.TaskMessage, err error) {
 	defer cancel()
 
 	pipeline := r.rdb.Pipeline()
-	count, _ := pipeline.HIncrBy(ctx, "task:meta:"+task.TaskID, "retry_count", 1).Result()
+	countCmd := pipeline.HIncrBy(ctx, "task:meta:"+task.TaskID, "retry_count", 1)
 	pipeline.HSet(ctx, "task:meta:"+task.TaskID, "error_msg", err.Error())
+
+	_, err = pipeline.Exec(ctx)
+	if err != nil {
+		log.Println("err:", err)
+		return
+	}
+
+	count, _ := countCmd.Result()
 
 	if count >= r.MaxRetry {
 		if err := r.sendToDlq(task.TaskID); err != nil {
@@ -58,13 +66,10 @@ func (r *Retry) retry(task *infra_.TaskMessage, err error) {
 	}
 
 	nextRunTime := time.Now().Add(delay)
-	pipeline.ZAdd(ctx, "task:delay", &redis.Z{
+	if err := r.rdb.ZAdd(ctx, "task:delay", &redis.Z{
 		Score:  float64(nextRunTime.Unix()),
 		Member: task.TaskID,
-	})
-
-	_, err = pipeline.Exec(ctx)
-	if err != nil {
+	}); err != nil {
 		log.Println("err:", err)
 		return
 	}

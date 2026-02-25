@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"gorm.io/gorm"
 	"log"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/model/config"
@@ -26,7 +25,7 @@ type Server struct {
 	heartbeatExpiry   time.Duration
 }
 
-func NewServer(db *gorm.DB, rdb *infra.Redis, conf *config.SchedulerConfig) *Server {
+func NewServer(db *infra.DB, rdb *infra.Redis, conf *config.SchedulerConfig) *Server {
 	server := new(Server)
 	server.id = utils.CreateID()
 	server.rdb = rdb
@@ -55,6 +54,9 @@ func (s *Server) Start() error {
 	if err := s.RegisterWorker(); err != nil {
 		return err
 	}
+
+	// 得先发送一次心跳 这个bug就是janitor会先扫描到这个node注册了 但是没有心跳
+	s.SendHeartbeat()
 
 	s.heartbeatTicker = time.NewTicker(s.heartbeatInterval)
 
@@ -101,4 +103,10 @@ func (s *Server) SendHeartbeat() error {
 func (s *Server) SendDeath(workerID string) error {
 	key := fmt.Sprintf("%s:%s", s.id, workerID)
 	return s.rdb.LPush(context.Background(), s.deathKey, key)
+}
+
+func (s *Server) RegisterServeMux(mux *ServeMux) {
+	for _, worker := range s.workerPool {
+		worker.RegisterMux(mux)
+	}
 }

@@ -30,6 +30,7 @@ type Lock struct {
 }
 
 type Dispatcher struct {
+	ScanInterval int `mapstructure:"scan_interval"`
 	Queue     string `mapstructure:"queue"`
 	BatchSize int    `mapstructure:"batch_size"`
 }

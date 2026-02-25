@@ -13,6 +13,7 @@ type CommonConfig struct {
 	Clickhouse    Clickhouse    `mapstructure:"clickhouse"`
 	Minio         Minio         `mapstructure:"minio"`
 	MongoDB       MongoDB       `mapstructure:"mongodb"`
+	Ratelimiter Ratelimiter `mapstructure:"ratelimiter"`
 }
 
 type Mysql struct {
@@ -80,4 +81,10 @@ type Minio struct {
 type MongoDB struct {
 	Addr string `mapstructure:"addr"`
 	Port string `mapstructure:"port"`
+}
+
+type Ratelimiter struct {
+	WindowSize int `mapstructure:"window_size"`
+	BaseLimit int `mapstructure:"base_limit"`
+	ScriptPath string `mapstructure:"script_path"`
 }

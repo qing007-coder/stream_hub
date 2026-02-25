@@ -8,6 +8,7 @@ import (
 	"log"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/model/config"
+	errors_ "stream_hub/pkg/errors"
 	"strings"
 	"time"
 )
@@ -18,6 +19,7 @@ type Janitor struct {
 	ticker            *time.Ticker
 	registerKey       string
 	deathKey          string
+	lock *DistributedLock
 }
 
 func NewJanitor(rdb *infra.Redis, conf *config.SchedulerConfig) *Janitor {
@@ -26,22 +28,42 @@ func NewJanitor(rdb *infra.Redis, conf *config.SchedulerConfig) *Janitor {
 		heartbeatInterval: time.Duration(conf.HeartbeatInterval) * time.Millisecond,
 		registerKey:       conf.RegisterKey,
 		deathKey:          conf.DeathKey,
+		lock: NewDistributedLock(rdb, conf),
 	}
 }
 
 func (j *Janitor) Run() {
+	log.Printf("janitor is running\n")
 	j.ticker = time.NewTicker(j.heartbeatInterval)
+	go j.ListenDeath()
 	for {
 		select {
 		case <-j.ticker.C:
+			log.Println("janitor is scaning")
 			if err := j.Scan(); err != nil {
-				log.Println("err:", err)
+				if !errors.Is(err, redis.Nil) {
+					log.Println("err:", err)
+				}
 			}
 		}
 	}
 }
 
 func (j *Janitor) Scan() error {
+	resource := "scheduler:janitor"
+	id, err := j.lock.Lock(resource)
+	if err != nil {
+		if errors.Is(err, errors_.ErrKeyExists) {
+			if err := j.lock.Wait(resource); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	defer j.lock.Unlock(resource, id)
+
 	aliveNodes := make(map[string]struct{})
 	// 心跳名单
 	iter := j.rdb.Scan(context.Background(), 0, "scheduler:heartbeat:*", 500).Iterator()
@@ -61,6 +83,9 @@ func (j *Janitor) Scan() error {
 			log.Printf("发现失联节点: %s", nodeID)
 			workerMap, _ := j.rdb.HGetAll(context.Background(), fullKey)
 			for workerID := range workerMap {
+				if err := j.rdb.Del(context.Background(), j.registerKey+nodeID); err != nil {
+					return err
+				}
 				if err := j.cleanup(workerID); err != nil {
 					return err
 				}
@@ -71,6 +96,7 @@ func (j *Janitor) Scan() error {
 	return nil
 }
 
+// node的worker若死掉，node会主动报丧
 func (j *Janitor) ListenDeath() {
 	for {
 		key, err := j.rdb.BRPop(context.Background(), 5*time.Second, j.deathKey)
@@ -91,6 +117,9 @@ func (j *Janitor) ListenDeath() {
 		}
 
 		if err := j.cleanup(workerID); err != nil {
+			if errors.Is(err, redis.Nil) {
+				return 
+			}
 			log.Println("err:", err)
 		}
 	}
