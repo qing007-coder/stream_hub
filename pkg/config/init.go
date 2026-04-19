@@ -149,3 +149,20 @@ func NewSchedulerConfig() (*config.SchedulerConfig, error) {
 
 	return conf, nil
 }
+
+func NewEventConsumerConfig() (*config.EventConsumerConfig, error) {
+	v := viper.New()
+	v.AddConfigPath("./config/")
+	v.SetConfigName("event_consumer")
+	v.SetConfigType("yaml")
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	conf := new(config.EventConsumerConfig)
+	if err := v.Unmarshal(conf); err != nil {
+		return nil, errors.UnmarshalError
+	}
+
+	return conf, nil
+}
