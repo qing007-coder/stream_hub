@@ -1,14 +1,15 @@
 package interaction
 
 import (
-	"github.com/IBM/sarama"
-	"github.com/goccy/go-json"
 	"log"
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/config"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/mq"
 	"time"
+
+	"github.com/IBM/sarama"
+	"github.com/goccy/go-json"
 )
 
 type EventSender struct {
@@ -36,6 +37,7 @@ func NewEventSender(commonConf *config.CommonConfig, interactionConf *config.Int
 }
 
 func (e *EventSender) Run() {
+	go e.listen()
 	for {
 		select {
 		case <-e.timer.C:
@@ -79,7 +81,10 @@ func (e *EventSender) flush() error {
 	e.events = e.events[:0]
 
 	if !e.timer.Stop() {
-		<-e.timer.C
+		select {
+		case <-e.timer.C:
+		default:
+		}
 	}
 	e.timer.Reset(e.duration)
 

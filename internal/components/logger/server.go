@@ -54,7 +54,7 @@ func (s *Server) Start() {
 
 	for {
 		if err := s.consumer.Consume(ctx, []string{constant.UserLogTopic, constant.SystemLogTopic}, s); err != nil {
-			log.Printf("consume error: %v", err)
+			log.Printf("consume error: %v\n", err)
 		}
 
 		if ctx.Err() != nil {
