@@ -1,6 +1,6 @@
 package constant
 
-// EventType 行为埋点类型（稳定枚举，不可随意新增）
+// EventType 行为埋点类型
 const (
 	EventCreateVideo = "create_video"
 
