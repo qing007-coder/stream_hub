@@ -14,7 +14,7 @@ const (
 
 	TaskSendNotify = "send_notify"
 
-	TaskVideoToES = "video_to_es"
+	TaskCalculateFeed = "calculate_feed"
 )
 
 const (

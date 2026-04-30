@@ -2,9 +2,10 @@ package storage
 
 import (
 	"encoding/json"
-	"gorm.io/gorm"
 	"stream_hub/pkg/utils"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type BaseModel struct {
@@ -92,33 +93,45 @@ func (FileModel) TableName() string {
 }
 
 // VideoModel 视频业务表：记录用户上传的视频信息
-// 多个用户上传同一个视频，会有多条记录，但指向同一个 FileHash
 type VideoModel struct {
 	BaseModel
-	Title           string          `gorm:"type:varchar(100);not null;comment:视频标题"`
-	Description     string          `gorm:"type:text;comment:视频简介"`
-	AuthorID        string          `gorm:"index;comment:上传者用户ID"`
-	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用"`
-	CoverUrl        string          `gorm:"type:varchar(255);comment:封面图地址"`
-	Status          int             `gorm:"default:0;comment:0-待审核 1-审核通过 2-审核未通过"`
-	IsPublic        int             `gorm:"default:0;comment:0-私密 1-开放"`
-	Duration        int64           `gorm:"comment:视频时长(秒)"`
-	VideoMeta       json.RawMessage `gorm:"type:json;not null;comment:视频原始元数据"`
-}
-
-func (v *VideoModel) BeforeCreate(tx *gorm.DB) error {
-	if err := v.BaseModel.BeforeCreate(tx); err != nil {
-		return err
-	}
-
-	if len(v.VideoMeta) == 0 {
-		v.VideoMeta = json.RawMessage(`{}`)
-	}
-	return nil
+	Title       string `gorm:"type:varchar(100);not null;comment:视频标题"`
+	Description string `gorm:"type:text;comment:视频简介"`
+	AuthorID    string `gorm:"index;comment:上传者用户ID"`
+	CoverUrl    string `gorm:"type:varchar(255);comment:封面图地址"`
+	IsPublic    int    `gorm:"default:0;comment:0-私密 1-开放"`
+	Duration    int64  `gorm:"comment:视频时长(秒)"`
 }
 
 func (VideoModel) TableName() string {
 	return "user_videos"
+}
+
+// MediaModel 媒体资产表：管理视频文件、转码和审核状态
+type MediaModel struct {
+	BaseModel
+	VideoID         string          `gorm:"index;comment:关联视频ID"`
+	Type            string          `gorm:"type:varchar(20);not null;comment:媒体类型(original/transcoded/cover)"`
+	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用"`
+	M3u8Url         string          `gorm:"type:varchar(255);comment:m3u8播放路径"`
+	TranscodeStatus int             `gorm:"default:0;comment:0-待转码 1-转码中 2-转码完成 3-转码失败"`
+	AuditStatus     int             `gorm:"default:0;comment:0-待审核 1-机审中 2-机审通过 3-机审失败 4-人工审核中 5-审核通过 6-审核拒绝 7-封禁"`
+	Metadata        json.RawMessage `gorm:"type:json;not null;comment:媒体原始元数据"`
+}
+
+func (m *MediaModel) BeforeCreate(tx *gorm.DB) error {
+	if err := m.BaseModel.BeforeCreate(tx); err != nil {
+		return err
+	}
+
+	if len(m.Metadata) == 0 {
+		m.Metadata = json.RawMessage(`{}`)
+	}
+	return nil
+}
+
+func (MediaModel) TableName() string {
+	return "media_assets"
 }
 
 type VideoLikeModel struct {
