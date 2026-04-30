@@ -3,15 +3,16 @@ package interaction
 import (
 	"context"
 	"errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Comment struct {
@@ -65,6 +66,7 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 	c.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: constant.ResourceVideo,
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
@@ -103,23 +105,16 @@ func (c *Comment) DeleteComment(ctx context.Context, req *pb.DeleteCommentReques
 	collection := c.Mongo.Collection(constant.InteractionDB, constant.Comment)
 
 	filter := bson.M{
-		"_id":        oid,
-		"user_id":    uid,
-		"is_deleted": false,
+		"_id":     oid,
+		"user_id": uid,
 	}
 
-	update := bson.M{
-		"$set": bson.M{
-			"is_deleted": true,
-		},
-	}
-
-	result, err := collection.UpdateOne(ctx, filter, update)
+	result, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
 
-	if result.MatchedCount == 0 {
+	if result.DeletedCount == 0 {
 		return errors.New("comment not found or no permission")
 	}
 

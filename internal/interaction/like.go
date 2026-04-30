@@ -60,6 +60,7 @@ func (l *Like) CreateLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 	l.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: constant.ResourceVideo,
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
@@ -86,7 +87,7 @@ func (l *Like) DeleteLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 		return err
 	}
 
-	if err := l.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Delete(&storage.VideoLikeModel{}).Error; err != nil {
+	if err := l.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Unscoped().Delete(&storage.VideoLikeModel{}).Error; err != nil {
 		return err
 	}
 

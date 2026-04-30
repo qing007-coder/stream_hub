@@ -97,5 +97,6 @@ func (e *EventSender) flush() error {
 }
 
 func (e *EventSender) Send(event *storage.Event) {
+	event.EventTime = time.Now()
 	e.eventChan <- event
 }
