@@ -101,7 +101,10 @@ func (l *Logger) flush() error {
 	l.batchLogs = make([][]byte, 0)
 
 	if !l.timer.Stop() {
-		<-l.timer.C
+		select {
+    	case <-l.timer.C:
+    	default:
+    	}
 	}
 	l.timer.Reset(l.duration) // 重置计时器
 
