@@ -58,6 +58,7 @@ func (f *Favourite) CreateFavorite(ctx context.Context, req *pb.FavoriteRequest,
 	f.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: constant.ResourceVideo,
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
@@ -83,7 +84,7 @@ func (f *Favourite) DeleteFavorite(ctx context.Context, req *pb.FavoriteRequest,
 		return err
 	}
 
-	if err := f.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Delete(&storage.VideoFavoriteModel{}).Error; err != nil {
+	if err := f.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Unscoped().Delete(&storage.VideoFavoriteModel{}).Error; err != nil {
 		return err
 	}
 

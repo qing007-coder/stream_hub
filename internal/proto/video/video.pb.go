@@ -114,11 +114,10 @@ type AuthorVideoInfo struct {
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	CoverUrl      string                 `protobuf:"bytes,4,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
-	Status        int32                  `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`                     // 0-待审核 1-通过 2-拒绝
-	IsPublic      int32                  `protobuf:"varint,6,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"` // 0-私密 1-公开
-	Duration      int64                  `protobuf:"varint,7,opt,name=duration,proto3" json:"duration,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	IsPublic      int32                  `protobuf:"varint,5,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"` // 0-私密 1-公开
+	Duration      int64                  `protobuf:"varint,6,opt,name=duration,proto3" json:"duration,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -181,13 +180,6 @@ func (x *AuthorVideoInfo) GetCoverUrl() string {
 	return ""
 }
 
-func (x *AuthorVideoInfo) GetStatus() int32 {
-	if x != nil {
-		return x.Status
-	}
-	return 0
-}
-
 func (x *AuthorVideoInfo) GetIsPublic() int32 {
 	if x != nil {
 		return x.IsPublic
@@ -218,21 +210,18 @@ func (x *AuthorVideoInfo) GetUpdatedAt() *timestamppb.Timestamp {
 
 // ---------- 内部完整模型（仅服务内部 / 管理端使用） ----------
 type InternalVideoInfo struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title           string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	AuthorId        string                 `protobuf:"bytes,4,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
-	SourceObjectKey string                 `protobuf:"bytes,5,opt,name=source_object_key,json=sourceObjectKey,proto3" json:"source_object_key,omitempty"` // MinIO / OSS 内部引用
-	CoverUrl        string                 `protobuf:"bytes,6,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
-	Status          int32                  `protobuf:"varint,7,opt,name=status,proto3" json:"status,omitempty"`
-	IsPublic        int32                  `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
-	Duration        int64                  `protobuf:"varint,9,opt,name=duration,proto3" json:"duration,omitempty"`
-	VideoMeta       string                 `protobuf:"bytes,10,opt,name=video_meta,json=videoMeta,proto3" json:"video_meta,omitempty"` // JSON：分辨率 / 编码 / 码率等
-	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,4,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	CoverUrl      string                 `protobuf:"bytes,5,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
+	IsPublic      int32                  `protobuf:"varint,6,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	Duration      int64                  `protobuf:"varint,7,opt,name=duration,proto3" json:"duration,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InternalVideoInfo) Reset() {
@@ -293,25 +282,11 @@ func (x *InternalVideoInfo) GetAuthorId() string {
 	return ""
 }
 
-func (x *InternalVideoInfo) GetSourceObjectKey() string {
-	if x != nil {
-		return x.SourceObjectKey
-	}
-	return ""
-}
-
 func (x *InternalVideoInfo) GetCoverUrl() string {
 	if x != nil {
 		return x.CoverUrl
 	}
 	return ""
-}
-
-func (x *InternalVideoInfo) GetStatus() int32 {
-	if x != nil {
-		return x.Status
-	}
-	return 0
 }
 
 func (x *InternalVideoInfo) GetIsPublic() int32 {
@@ -326,13 +301,6 @@ func (x *InternalVideoInfo) GetDuration() int64 {
 		return x.Duration
 	}
 	return 0
-}
-
-func (x *InternalVideoInfo) GetVideoMeta() string {
-	if x != nil {
-		return x.VideoMeta
-	}
-	return ""
 }
 
 func (x *InternalVideoInfo) GetCreatedAt() *timestamppb.Timestamp {
@@ -949,36 +917,30 @@ const file_video_proto_rawDesc = "" +
 	"\tauthor_id\x18\x04 \x01(\tR\bauthorId\x12\x1a\n" +
 	"\bduration\x18\x05 \x01(\x03R\bduration\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xbd\x02\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa5\x02\n" +
 	"\x0fAuthorVideoInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1b\n" +
-	"\tcover_url\x18\x04 \x01(\tR\bcoverUrl\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\x05R\x06status\x12\x1b\n" +
+	"\tcover_url\x18\x04 \x01(\tR\bcoverUrl\x12\x1b\n" +
+	"\tis_public\x18\x05 \x01(\x05R\bisPublic\x12\x1a\n" +
+	"\bduration\x18\x06 \x01(\x03R\bduration\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc4\x02\n" +
+	"\x11InternalVideoInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1b\n" +
+	"\tauthor_id\x18\x04 \x01(\tR\bauthorId\x12\x1b\n" +
+	"\tcover_url\x18\x05 \x01(\tR\bcoverUrl\x12\x1b\n" +
 	"\tis_public\x18\x06 \x01(\x05R\bisPublic\x12\x1a\n" +
 	"\bduration\x18\a \x01(\x03R\bduration\x129\n" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xa7\x03\n" +
-	"\x11InternalVideoInfo\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1b\n" +
-	"\tauthor_id\x18\x04 \x01(\tR\bauthorId\x12*\n" +
-	"\x11source_object_key\x18\x05 \x01(\tR\x0fsourceObjectKey\x12\x1b\n" +
-	"\tcover_url\x18\x06 \x01(\tR\bcoverUrl\x12\x16\n" +
-	"\x06status\x18\a \x01(\x05R\x06status\x12\x1b\n" +
-	"\tis_public\x18\b \x01(\x05R\bisPublic\x12\x1a\n" +
-	"\bduration\x18\t \x01(\x03R\bduration\x12\x1d\n" +
-	"\n" +
-	"video_meta\x18\n" +
-	" \x01(\tR\tvideoMeta\x129\n" +
-	"\n" +
-	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
-	"\n" +
-	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xaa\x01\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xaa\x01\n" +
 	"\x10GetVideoResponse\x12F\n" +
 	"\fpublic_video\x18\x01 \x01(\v2!.stream_hub.video.PublicVideoInfoH\x00R\vpublicVideo\x12F\n" +
 	"\fauthor_video\x18\x02 \x01(\v2!.stream_hub.video.AuthorVideoInfoH\x00R\vauthorVideoB\x06\n" +

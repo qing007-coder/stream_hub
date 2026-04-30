@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/minio/minio-go/v7"
-	"gorm.io/gorm"
 	"path"
 	"sort"
 	"strconv"
@@ -15,11 +12,14 @@ import (
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/api"
 	"stream_hub/pkg/model/config"
-	infra_ "stream_hub/pkg/model/infra"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
+	"gorm.io/gorm"
 )
 
 type MediaApi struct {
@@ -144,10 +144,12 @@ func (m *MediaApi) InitUpload(ctx *gin.Context) {
 		return
 	}
 
+	path := fmt.Sprintf("/%s/%s", constant.VideoBucket, fileName)
+
 	info := map[string]interface{}{
 		"upload_id":     id,
 		"upload_chunks": 0,
-		"file_name":     fileName,
+		"file_name":     path,
 		"file_size":     req.FileSize,
 		"chunk_size":    m.ChunkSize,
 	}
@@ -267,6 +269,7 @@ func (m *MediaApi) CompleteUpload(ctx *gin.Context) {
 
 	_, err = m.Minio.Core.CompleteMultipartUpload(context.Background(), constant.VideoBucket, data["file_name"], req.UploadID, parts, minio.PutObjectOptions{})
 	if err != nil {
+		
 		utils.InternalServerError(ctx)
 		return
 	}
@@ -276,23 +279,9 @@ func (m *MediaApi) CompleteUpload(ctx *gin.Context) {
 	var video storage.FileModel
 	m.DB.Where("file_hash = ?", req.FileHash).First(&video)
 
-	// 发送转码任务
-	if err := m.TaskSender.SendTask(infra_.TaskMessage{
-		Type:    constant.TaskVideoTranscode,
-		BizID:   video.ID,
-		Priority: "critical",
-		RetryCount: 0,
-		Payload: infra_.TaskPayload{
-			Operator: "",
-			Source: constant.Media,
-			Data: nil,
-		},
-	}); err != nil {
-		utils.InternalServerError(ctx)
-		return
-	}
-
-	utils.StatusOK(ctx, api.CompleteUploadResp{}, "finish uploading successfully")
+	utils.StatusOK(ctx, api.CompleteUploadResp{
+		VideoURL: video.FilePath,
+	}, "finish uploading successfully")
 }
 
 func (m *MediaApi) GenerateObjectName(fileName string) string {

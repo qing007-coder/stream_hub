@@ -50,6 +50,7 @@ func (f *Follow) CreateFollow(ctx context.Context, req *pb.FollowRequest, resp *
 	f.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: constant.ResourceUser,
 		ResourceID:   req.TargetUserId,
 		Timestamp:    time.Now().Unix(),
@@ -64,7 +65,7 @@ func (f *Follow) CreateFollow(ctx context.Context, req *pb.FollowRequest, resp *
 func (f *Follow) DeleteFollow(ctx context.Context, req *pb.FollowRequest, resp *pb.ActionResponse) error {
 	uid := ctx.Value("user_id").(string)
 
-	if err := f.DB.Where("user_id = ? AND target_user_id = ?", uid, req.TargetUserId).Delete(&storage.UserFollowModel{}).Error; err != nil {
+	if err := f.DB.Where("user_id = ? AND target_user_id = ?", uid, req.TargetUserId).Unscoped().Delete(&storage.UserFollowModel{}).Error; err != nil {
 		return err
 	}
 
@@ -78,6 +79,7 @@ func (f *Follow) DeleteFollow(ctx context.Context, req *pb.FollowRequest, resp *
 	f.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: constant.ResourceUser,
 		ResourceID:   req.TargetUserId,
 		Timestamp:    time.Now().Unix(),

@@ -16,7 +16,6 @@ type AuthorVideoInfo struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	CoverURL    string    `json:"cover_url"`
-	Status      int32     `json:"status"`
 	IsPublic    int32     `json:"is_public"`
 	Duration    int64     `json:"duration"`
 	CreatedAt   time.Time `json:"created_at"`

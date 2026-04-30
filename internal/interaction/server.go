@@ -25,6 +25,8 @@ func NewServer(base *infra.Base, commonConf *config.CommonConfig, interactionCon
 	if err != nil {
 		return nil, err
 	}
+
+	go sender.Run()
 	s := &Server{
 		port:        interactionConf.Port,
 		name:        interactionConf.Name,

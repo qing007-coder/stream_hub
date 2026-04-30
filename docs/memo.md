@@ -11,8 +11,6 @@
 #### 互动模块
 ##### 可以用middleware来消息推送 异步发送任务发送修改user的点赞数还有一些别的字段 like follow favourite应该异步落库 后期再更改
 
-### cache
-#### 写回法
 
 ### 可以写在简历上的 第一遍用的是所有的worker作为payload但是发现worker数量上来了 payload会很大 janitor容易发生竞态
 ### 第二版用的是死亡的worker作为payload 但是如果janitor未扫描到就被覆盖了 janitor就清理不了死掉的worker队列了
@@ -23,3 +21,9 @@
 #### task:pool这种存任务的设计可以换成task:meta:task_id和task:payload:task_id 然后retry啥的都得改
 
 ### 分布式锁可以考虑用乐观锁
+
+### 任务调度系统加上状态机系统
+
+### 限流器目前的窗口是固定的 后期可以做成可变窗口 可以通过指标之类的东西 扩充窗口
+
+### 日志做的有问题 应该像那种tag似的 而不是直接写死成这种

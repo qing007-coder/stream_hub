@@ -6,4 +6,5 @@ const (
 	Video       = "video"
 	Gateway     = "gateway"
 	Interaction = "interaction"
+	Scheduler   = "scheduler"
 )

@@ -17,11 +17,12 @@ import (
 
 type Video struct {
 	*infra.Base
-	sender *EventSender
+	sender     *EventSender
+	TaskSender *infra.TaskSender
 }
 
-func NewVideo(base *infra.Base, sender *EventSender) *Video {
-	return &Video{base, sender}
+func NewVideo(base *infra.Base, sender *EventSender, taskSender *infra.TaskSender) *Video {
+	return &Video{base, sender, taskSender}
 }
 
 func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, resp *video.AuthorVideoInfo) error {
@@ -29,14 +30,24 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 	uid := ctx.Value("user_id").(string)
 
 	model := storage.VideoModel{
-		Title:           req.Title,
-		Description:     req.Description,
-		AuthorID:        uid,
-		SourceObjectKey: req.SourceObjectKey,
-		CoverUrl:        req.CoverUrl,
+		Title:       req.Title,
+		Description: req.Description,
+		AuthorID:    uid,
+		CoverUrl:    req.CoverUrl,
 	}
 
 	if err := v.DB.Create(&model).Error; err != nil {
+		return err
+	}
+
+	// 创建 MediaModel 记录，关联视频和源文件
+	if err := v.DB.Create(&storage.MediaModel{
+		VideoID:         model.ID,
+		Type:            "original",
+		SourceObjectKey: req.SourceObjectKey,
+		TranscodeStatus: 0, // 0-待转码
+		AuditStatus:     0, // 0-待审核
+	}).Error; err != nil {
 		return err
 	}
 
@@ -48,23 +59,28 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 	v.sender.Send(&storage.Event{
 		EventID:      utils.CreateID(),
 		EventType:    eventType,
+		UserID:       uid,
 		ResourceType: resourceType,
 		ResourceID:   model.ID,
 		Timestamp:    time.Now().Unix(),
 	})
 
-	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:    constant.TaskVideoToES,
-		BizID:   model.ID,
-		Priority: "critical",
+	// 发送转码任务
+	if err := v.TaskSender.SendTask(infra_.TaskMessage{
+		Type:       constant.TaskVideoTranscode,
+		BizID:      model.ID,
+		Priority:   "critical",
 		RetryCount: 0,
 		Payload: infra_.TaskPayload{
 			Operator: "",
-			Action: constant.ActionCreate,
-			Source: constant.Video,
-			Data: nil,
+			Source:   constant.Media,
+			Data:     nil,
 		},
-	})
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *video.GetVideoResponse) error {
@@ -87,8 +103,7 @@ func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *
 	}
 
 	// 访客视角
-	if model.IsPublic == constant.VideoPublic &&
-		model.Status == constant.VideoApproved {
+	if model.IsPublic == constant.VideoPublic {
 
 		info := &video.PublicVideoInfo{}
 		v.fillPublicVideoInfo(info, &model)
@@ -98,21 +113,23 @@ func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *
 		return nil
 	}
 
-	return errors.New("video is private or not approved")
+	return errors.New("video is private")
 }
 
 func (v *Video) UpdateVideo(ctx context.Context, req *video.UpdateVideoRequest, resp *video.AuthorVideoInfo) error {
 
 	uid := ctx.Value("user_id").(string)
 
+	updates := map[string]interface{}{
+		"title":       req.Title,
+		"description": req.Description,
+		"cover_url":   req.CoverUrl,
+		"is_public":   req.IsPublic,
+	}
+
 	if err := v.DB.Model(&storage.VideoModel{}).
 		Where("id = ? and author_id = ?", req.VideoId, uid).
-		Updates(map[string]interface{}{
-			"title":       req.Title,
-			"description": req.Description,
-			"cover_url":   req.CoverUrl,
-			"is_public":   req.IsPublic,
-		}).Error; err != nil {
+		Updates(updates).Error; err != nil {
 		return err
 	}
 
@@ -123,18 +140,7 @@ func (v *Video) UpdateVideo(ctx context.Context, req *video.UpdateVideoRequest, 
 
 	v.fillAuthorVideoInfo(resp, &model)
 
-	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:    constant.TaskVideoToES,
-		BizID:   model.ID,
-		Priority: "critical",
-		RetryCount: 0,
-		Payload: infra_.TaskPayload{
-			Operator: "",
-			Action: constant.ActionUpdate,
-			Source: constant.Video,
-			Data: nil,
-		},
-	})
+	return nil
 }
 
 func (v *Video) DeleteVideo(ctx context.Context, req *video.DeleteVideoRequest, resp *video.DeleteVideoResponse) error {
@@ -152,18 +158,7 @@ func (v *Video) DeleteVideo(ctx context.Context, req *video.DeleteVideoRequest, 
 	resp.Success = true
 	resp.Message = "ok"
 
-	return v.TaskSender.SendTask(infra_.TaskMessage{
-		Type:    constant.TaskVideoToES,
-		BizID:   req.VideoId,
-		Priority: "critical",
-		RetryCount: 0,
-		Payload: infra_.TaskPayload{
-			Operator: "",
-			Action: constant.ActionDelete,
-			Source: constant.Video,
-			Data: nil,
-		},
-	})
+	return nil
 }
 
 func (v *Video) ListUserPublishedVideos(ctx context.Context, req *video.ListUserPublishedVideosRequest, resp *video.ListUserPublishedVideosResponse) error {
@@ -175,8 +170,7 @@ func (v *Video) ListUserPublishedVideos(ctx context.Context, req *video.ListUser
 
 	db := v.DB.Model(&storage.VideoModel{}).
 		Where("author_id = ?", req.UserId).
-		Where("is_public = ?", constant.VideoPublic).
-		Where("status = ?", constant.VideoApproved)
+		Where("is_public = ?", constant.VideoPublic)
 
 	if err := db.Count(&total).Error; err != nil {
 		return err
@@ -252,7 +246,6 @@ func (v *Video) fillAuthorVideoInfo(resp *video.AuthorVideoInfo, m *storage.Vide
 	resp.Title = m.Title
 	resp.Description = m.Description
 	resp.CoverUrl = m.CoverUrl
-	resp.Status = int32(m.Status)
 	resp.IsPublic = int32(m.IsPublic)
 	resp.Duration = m.Duration
 	resp.CreatedAt = timestamppb.New(m.CreatedAt)

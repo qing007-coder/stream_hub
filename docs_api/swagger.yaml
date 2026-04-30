@@ -1,0 +1,727 @@
+definitions:
+  api.CreateCommentRequest:
+    properties:
+      content:
+        maxLength: 1000
+        type: string
+      parent_id:
+        type: string
+      reply_to_user_id:
+        type: string
+      video_id:
+        type: string
+    required:
+    - content
+    - video_id
+    type: object
+  api.CreateVideoRequest:
+    properties:
+      cover_url:
+        type: string
+      description:
+        maxLength: 5000
+        type: string
+      source_object_key:
+        type: string
+      title:
+        maxLength: 100
+        type: string
+    required:
+    - cover_url
+    - source_object_key
+    - title
+    type: object
+  api.UpdateVideoRequest:
+    properties:
+      cover_url:
+        type: string
+      description:
+        maxLength: 5000
+        type: string
+      is_public:
+        enum:
+        - 0
+        - 1
+        type: integer
+      title:
+        maxLength: 100
+        type: string
+      video_id:
+        type: string
+    required:
+    - video_id
+    type: object
+info:
+  contact: {}
+paths:
+  /api/interaction/comment:
+    post:
+      consumes:
+      - application/json
+      description: 为视频创建评论
+      parameters:
+      - description: 创建评论请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 创建评论
+      tags:
+      - Interaction
+  /api/interaction/comment/{comment_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除评论
+      parameters:
+      - description: 评论 ID
+        in: path
+        name: comment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 删除评论
+      tags:
+      - Interaction
+  /api/interaction/comments/{video_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取视频的评论列表
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 父评论 ID
+        in: query
+        name: parent_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取评论列表
+      tags:
+      - Interaction
+  /api/interaction/favorite/{video_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 取消收藏视频
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 取消收藏
+      tags:
+      - Interaction
+    get:
+      consumes:
+      - application/json
+      description: 检查用户是否收藏视频
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 是否收藏
+      tags:
+      - Interaction
+    post:
+      consumes:
+      - application/json
+      description: 收藏视频
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 收藏
+      tags:
+      - Interaction
+  /api/interaction/follow/{target_user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 取消关注用户
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: target_user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 取消关注
+      tags:
+      - Interaction
+    get:
+      consumes:
+      - application/json
+      description: 检查用户是否关注目标用户
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: target_user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 是否关注
+      tags:
+      - Interaction
+    post:
+      consumes:
+      - application/json
+      description: 关注用户
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: target_user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 关注
+      tags:
+      - Interaction
+  /api/interaction/followers/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户的粉丝列表
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取粉丝列表
+      tags:
+      - Interaction
+  /api/interaction/followings/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户的关注列表
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取关注列表
+      tags:
+      - Interaction
+  /api/interaction/like/{video_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 取消对视频的点赞
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 取消点赞
+      tags:
+      - Interaction
+    get:
+      consumes:
+      - application/json
+      description: 检查用户是否为视频点赞
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 是否点赞
+      tags:
+      - Interaction
+    post:
+      consumes:
+      - application/json
+      description: 为视频点赞
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 点赞
+      tags:
+      - Interaction
+  /api/interaction/likes/{video_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取视频的点赞列表
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取点赞列表
+      tags:
+      - Interaction
+  /api/video/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建新的视频
+      parameters:
+      - description: 创建视频请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 创建视频
+      tags:
+      - Video
+  /api/video/delete/{video_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据视频 ID 删除视频
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 删除视频
+      tags:
+      - Video
+  /api/video/get/{video_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据视频 ID 获取视频详情
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取视频详情
+      tags:
+      - Video
+  /api/video/list/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定用户的公开视频列表
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户公开视频列表
+      tags:
+      - Video
+  /api/video/my/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的视频列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取我的视频列表
+      tags:
+      - Video
+  /api/video/update/{video_id}:
+    put:
+      consumes:
+      - application/json
+      description: 更新视频信息
+      parameters:
+      - description: 视频 ID
+        in: path
+        name: video_id
+        required: true
+        type: string
+      - description: 更新视频请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 更新视频
+      tags:
+      - Video
+swagger: "2.0"

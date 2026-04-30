@@ -22,6 +22,7 @@ type Server struct {
 
 func NewServer(base *infra.Base, commonConf *config.CommonConfig, videoConf *config.VideoConfig) (*Server, error) {
 	sender, err := NewEventSender(commonConf, videoConf)
+	taskSender, err := infra.NewTaskSender(commonConf)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func NewServer(base *infra.Base, commonConf *config.CommonConfig, videoConf *con
 	s := &Server{
 		port:    videoConf.Port,
 		name:    videoConf.Name,
-		video:   NewVideo(base, sender),
+		video:   NewVideo(base, sender, taskSender),
 		wrapper: NewWrapper(),
 	}
 

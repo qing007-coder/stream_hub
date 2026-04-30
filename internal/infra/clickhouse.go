@@ -3,12 +3,14 @@ package infra
 import (
 	"context"
 	"fmt"
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"reflect"
+	"stream_hub/pkg/constant"
 	"stream_hub/pkg/db"
 	"stream_hub/pkg/model/config"
 	"strings"
 	"time"
+
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
 type Clickhouse struct {
@@ -88,8 +90,8 @@ func (r *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data i
 			row = append(row, fieldVal)
 		}
 
-		if len(row) != 11 {
-			return fmt.Errorf("字段对齐失败: 期待 11, 实际解析出 %d. 请检查 ck 标签是否写漏了", len(row))
+		if (table == constant.StorageUserLog && len(row) != 11) || (table == constant.StorageEvent && len(row) != 9) {
+			return fmt.Errorf("字段对齐失败: 请检查 ck 标签是否写漏了", len(row))
 		}
 
 		if err := batch.Append(row...); err != nil {

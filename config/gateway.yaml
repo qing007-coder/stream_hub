@@ -3,3 +3,14 @@ port: 8080
 service:
   interaction_service: "interaction_master"
   video_service: "video_master"
+
+metrics:
+  counter_vector:
+    name: "streamhub_http_requests_total"
+    help: "Total number of HTTP requests"
+    labels: ["method", "route", "code"]
+  histogram:
+    name: "streamhub_http_duration_seconds"
+    help: "HTTP request latency"
+    labels: ["method", "route"]
+    buckets_boundaries: [0.01, 0.05, 0.1, 0.2, 0.5, 1, 2]
