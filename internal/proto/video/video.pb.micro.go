@@ -37,20 +37,15 @@ func NewVideoServiceEndpoints() []*api.Endpoint {
 // Client API for VideoService service
 
 type VideoService interface {
-	// 创建视频（作者）
 	CreateVideo(ctx context.Context, in *CreateVideoRequest, opts ...client.CallOption) (*AuthorVideoInfo, error)
-	// 获取视频详情
-	// - 作者：返回 AuthorVideoInfo
-	// - 非作者：返回 PublicVideoInfo
 	GetVideo(ctx context.Context, in *GetVideoRequest, opts ...client.CallOption) (*GetVideoResponse, error)
-	// 更新视频元数据（仅作者）
 	UpdateVideo(ctx context.Context, in *UpdateVideoRequest, opts ...client.CallOption) (*AuthorVideoInfo, error)
-	// 删除视频（仅作者）
 	DeleteVideo(ctx context.Context, in *DeleteVideoRequest, opts ...client.CallOption) (*DeleteVideoResponse, error)
-	// 获取某用户的公开视频列表（访客视角）
 	ListUserPublishedVideos(ctx context.Context, in *ListUserPublishedVideosRequest, opts ...client.CallOption) (*ListUserPublishedVideosResponse, error)
-	// 获取我自己的视频列表（作者视角）
 	ListMyVideos(ctx context.Context, in *ListMyVideosRequest, opts ...client.CallOption) (*ListMyVideosResponse, error)
+	ListFeedVideos(ctx context.Context, in *ListFeedVideosRequest, opts ...client.CallOption) (*ListFeedVideosResponse, error)
+	SearchVideos(ctx context.Context, in *SearchVideosRequest, opts ...client.CallOption) (*SearchVideosResponse, error)
+	ListHotVideos(ctx context.Context, in *ListHotVideosRequest, opts ...client.CallOption) (*ListHotVideosResponse, error)
 }
 
 type videoService struct {
@@ -125,23 +120,48 @@ func (c *videoService) ListMyVideos(ctx context.Context, in *ListMyVideosRequest
 	return out, nil
 }
 
+func (c *videoService) ListFeedVideos(ctx context.Context, in *ListFeedVideosRequest, opts ...client.CallOption) (*ListFeedVideosResponse, error) {
+	req := c.c.NewRequest(c.name, "VideoService.ListFeedVideos", in)
+	out := new(ListFeedVideosResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoService) SearchVideos(ctx context.Context, in *SearchVideosRequest, opts ...client.CallOption) (*SearchVideosResponse, error) {
+	req := c.c.NewRequest(c.name, "VideoService.SearchVideos", in)
+	out := new(SearchVideosResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoService) ListHotVideos(ctx context.Context, in *ListHotVideosRequest, opts ...client.CallOption) (*ListHotVideosResponse, error) {
+	req := c.c.NewRequest(c.name, "VideoService.ListHotVideos", in)
+	out := new(ListHotVideosResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for VideoService service
 
 type VideoServiceHandler interface {
-	// 创建视频（作者）
 	CreateVideo(context.Context, *CreateVideoRequest, *AuthorVideoInfo) error
-	// 获取视频详情
-	// - 作者：返回 AuthorVideoInfo
-	// - 非作者：返回 PublicVideoInfo
 	GetVideo(context.Context, *GetVideoRequest, *GetVideoResponse) error
-	// 更新视频元数据（仅作者）
 	UpdateVideo(context.Context, *UpdateVideoRequest, *AuthorVideoInfo) error
-	// 删除视频（仅作者）
 	DeleteVideo(context.Context, *DeleteVideoRequest, *DeleteVideoResponse) error
-	// 获取某用户的公开视频列表（访客视角）
 	ListUserPublishedVideos(context.Context, *ListUserPublishedVideosRequest, *ListUserPublishedVideosResponse) error
-	// 获取我自己的视频列表（作者视角）
 	ListMyVideos(context.Context, *ListMyVideosRequest, *ListMyVideosResponse) error
+	ListFeedVideos(context.Context, *ListFeedVideosRequest, *ListFeedVideosResponse) error
+	SearchVideos(context.Context, *SearchVideosRequest, *SearchVideosResponse) error
+	ListHotVideos(context.Context, *ListHotVideosRequest, *ListHotVideosResponse) error
 }
 
 func RegisterVideoServiceHandler(s server.Server, hdlr VideoServiceHandler, opts ...server.HandlerOption) error {
@@ -152,6 +172,9 @@ func RegisterVideoServiceHandler(s server.Server, hdlr VideoServiceHandler, opts
 		DeleteVideo(ctx context.Context, in *DeleteVideoRequest, out *DeleteVideoResponse) error
 		ListUserPublishedVideos(ctx context.Context, in *ListUserPublishedVideosRequest, out *ListUserPublishedVideosResponse) error
 		ListMyVideos(ctx context.Context, in *ListMyVideosRequest, out *ListMyVideosResponse) error
+		ListFeedVideos(ctx context.Context, in *ListFeedVideosRequest, out *ListFeedVideosResponse) error
+		SearchVideos(ctx context.Context, in *SearchVideosRequest, out *SearchVideosResponse) error
+		ListHotVideos(ctx context.Context, in *ListHotVideosRequest, out *ListHotVideosResponse) error
 	}
 	type VideoService struct {
 		videoService
@@ -186,4 +209,16 @@ func (h *videoServiceHandler) ListUserPublishedVideos(ctx context.Context, in *L
 
 func (h *videoServiceHandler) ListMyVideos(ctx context.Context, in *ListMyVideosRequest, out *ListMyVideosResponse) error {
 	return h.VideoServiceHandler.ListMyVideos(ctx, in, out)
+}
+
+func (h *videoServiceHandler) ListFeedVideos(ctx context.Context, in *ListFeedVideosRequest, out *ListFeedVideosResponse) error {
+	return h.VideoServiceHandler.ListFeedVideos(ctx, in, out)
+}
+
+func (h *videoServiceHandler) SearchVideos(ctx context.Context, in *SearchVideosRequest, out *SearchVideosResponse) error {
+	return h.VideoServiceHandler.SearchVideos(ctx, in, out)
+}
+
+func (h *videoServiceHandler) ListHotVideos(ctx context.Context, in *ListHotVideosRequest, out *ListHotVideosResponse) error {
+	return h.VideoServiceHandler.ListHotVideos(ctx, in, out)
 }
