@@ -1,8 +1,8 @@
 package constant
 
 const (
-	VideoPublic = iota
-	VideoPrivate
+	VideoPrivate = iota
+	VideoPublic
 )
 
 const (

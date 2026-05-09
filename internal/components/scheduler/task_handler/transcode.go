@@ -9,19 +9,21 @@ import (
 	"stream_hub/pkg/constant"
 	infra_ "stream_hub/pkg/model/infra"
 	"stream_hub/pkg/model/storage"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 )
 
 func (t *TaskHandler) TranscodeHandler(ctx context.Context, task *infra_.TaskMessage) error {
-	var media storage.FileModel
-	if err := t.DB.Where("id = ?", task.BizID).First(&media).Error; err != nil {
+	var asset storage.MediaModel
+	if err := t.DB.Where("id = ?", task.BizID).First(&asset).Error; err != nil {
 		return err
 	}
 
-	if media.Status == constant.FileStatusTranscodeFinished {
-		return nil
+	var media storage.FileModel
+	if err := t.DB.Where("file_path = ?", asset.SourceObjectKey).First(&media).Error; err != nil {
+		return err
 	}
 
 	localTmpDir := filepath.Join("./tmp", media.ID) // 本地临时存放切片的目录
@@ -32,9 +34,12 @@ func (t *TaskHandler) TranscodeHandler(ctx context.Context, task *infra_.TaskMes
 	}
 	defer os.RemoveAll(localTmpDir)
 
+	bucketPrefix := "/" + constant.VideoBucket + "/"
+	objectName := strings.TrimPrefix(media.FilePath, bucketPrefix)
+
 	// 生成 MinIO 临时下载链接 (让 FFmpeg 能够读取私有桶文件)
 	expiry := time.Hour * 2
-	presignedURL, err := t.Minio.Client.PresignedGetObject(ctx, constant.VideoBucket, media.FilePath, expiry, nil)
+	presignedURL, err := t.Minio.Client.PresignedGetObject(ctx, constant.VideoBucket, objectName, expiry, nil)
 	if err != nil {
 		return fmt.Errorf("failed to generate presigned url: %w", err)
 	}
@@ -45,19 +50,27 @@ func (t *TaskHandler) TranscodeHandler(ctx context.Context, task *infra_.TaskMes
 	segmentPath := filepath.Join(localTmpDir, "seg%03d.ts")
 
 	args := []string{
-		"-i", presignedURL.String(), // 输入：MinIO 临时链接
-		"-c:v", "libx264", // 视频编码
-		"-c:a", "aac", // 音频编码
-		"-f", "hls", // 输出格式为 HLS
-		"-hls_time", "10", // 每个切片 10 秒
-		"-hls_list_size", "0", // 索引保留所有切片
+		"-hide_banner",
+		"-y",
+		"-i", presignedURL.String(),
+		"-map", "0:v:0",
+		"-map", "0:a?",
+		"-c:v", "copy",
+		"-c:a", "aac",
+		"-f", "hls",
+		"-hls_time", "10",
+		"-hls_list_size", "0",
+		"-hls_playlist_type", "vod",
 		"-hls_segment_filename", segmentPath,
+
 		m3u8Path,
 	}
 
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("ffmpeg transcode failed: %w", err)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ffmpeg transcode failed: %w\nffmpeg output:\n%s", err, string(output))
 	}
 
 	// 批量上传转码后的文件到 MinIO
@@ -82,20 +95,19 @@ func (t *TaskHandler) TranscodeHandler(ctx context.Context, task *infra_.TaskMes
 
 	t.DB.Model(&storage.MediaModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
 		"transcode_status": constant.FileStatusTranscodeFinished,
-		"m3u8_url": fmt.Sprintf("/%s/output/%s/index.m3u8", constant.VideoBucket, media.ID),
+		"m3u8_url":         fmt.Sprintf("/%s/output/%s/index.m3u8", constant.VideoBucket, media.ID),
 	})
 
-
 	return t.TaskSender.SendTask(infra_.TaskMessage{
-		Type: constant.TaskVideoAudit,
-		BizID: task.BizID,
-		Priority: "critical",
+		Type:       constant.TaskVideoAudit,
+		BizID:      task.BizID,
+		Priority:   "critical",
 		RetryCount: 0,
 		Payload: infra_.TaskPayload{
 			Operator: "",
-			Action: "",
-			Source: constant.Scheduler,
-			Data: nil,
+			Action:   "",
+			Source:   constant.Scheduler,
+			Data:     nil,
 		},
 	})
 }

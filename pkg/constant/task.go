@@ -15,10 +15,16 @@ const (
 	TaskSendNotify = "send_notify"
 
 	TaskCalculateFeed = "calculate_feed"
+
+	TaskStorePersistency = "storage_persistency"
 )
 
 const (
-	ActionCreate = "action_create"
-	ActionUpdate = "action_update"
-	ActionDelete = "action_delete"
+	ActionCreateLike = "action_create_like"
+	ActionUpdateLike = "action_update_like"
+	ActionDeleteLike = "action_delete_like"
+
+	ActionCreateFavourite = "action_create_favourite"
+	ActionUpdateFavourite = "action_update_favourite"
+	ActionDeleteFavourite = "action_delete_favourite"
 )
