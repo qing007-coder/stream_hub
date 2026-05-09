@@ -87,6 +87,61 @@ type ListMyVideosResponse struct {
 	Total  int64             `json:"total"`
 }
 
+// ListFeedVideosRequest 获取视频Feed流请求
+type ListFeedVideosRequest struct {
+	Page    int32 `json:"page" form:"page" binding:"min=1"`
+	Size    int32 `json:"size" form:"size" binding:"min=1,max=50"`
+	LastID  string `json:"last_id" form:"last_id"`
+}
+
+// FeedVideoInfo Feed视频信息
+type FeedVideoInfo struct {
+	ID             string    `json:"id"`
+	Title          string    `json:"title"`
+	CoverURL       string    `json:"cover_url"`
+	AuthorID       string    `json:"author_id"`
+	AuthorNickname string    `json:"author_nickname"`
+	AuthorAvatar   string    `json:"author_avatar"`
+	Duration       int64     `json:"duration"`
+	LikeCount      int64     `json:"like_count"`
+	CommentCount   int64     `json:"comment_count"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+// ListFeedVideosResponse 获取视频Feed流响应
+type ListFeedVideosResponse struct {
+	Videos   []FeedVideoInfo `json:"videos"`
+	Total    int64           `json:"total"`
+	HasMore  bool            `json:"has_more"`
+}
+
+// SearchVideosRequest 搜索视频请求
+type SearchVideosRequest struct {
+	Keyword string `json:"keyword" form:"keyword" binding:"required"`
+	Page    int32  `json:"page" form:"page" binding:"min=1"`
+	Size    int32  `json:"size" form:"size" binding:"min=1,max=50"`
+}
+
+// SearchVideosResponse 搜索视频响应
+type SearchVideosResponse struct {
+	Videos  []PublicVideoInfo `json:"videos"`
+	Total   int64             `json:"total"`
+	HasMore bool              `json:"has_more"`
+}
+
+// ListHotVideosRequest 获取热度视频请求
+type ListHotVideosRequest struct {
+	Page int32 `json:"page" form:"page" binding:"min=1"`
+	Size int32 `json:"size" form:"size" binding:"min=1,max=50"`
+}
+
+// ListHotVideosResponse 获取热度视频响应
+type ListHotVideosResponse struct {
+	Videos  []FeedVideoInfo `json:"videos"`
+	Total   int64           `json:"total"`
+	HasMore bool            `json:"has_more"`
+}
+
 // ActionResponse 操作响应
 type ActionResponse struct {
 	Success bool   `json:"success"`

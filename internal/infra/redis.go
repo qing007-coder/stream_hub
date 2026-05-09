@@ -147,3 +147,16 @@ func (r *Redis) ScriptLoad(ctx context.Context, script string) (string, error) {
 func (r *Redis) EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) (bool, error) {
 	return r.Client.EvalSha(ctx, sha1, keys, args...).Bool()
 }
+
+func (r *Redis) SMembers(ctx context.Context, key string) ([]string, error) {
+	return r.Client.SMembers(ctx, key).Result()
+}
+
+func (r *Redis) GetString(ctx context.Context, key string) (string, error) {
+	return r.Client.Get(ctx, key).Result()
+}
+
+func (r *Redis) Exists(ctx context.Context, key string) (bool, error) {
+	result, err := r.Client.Exists(ctx, key).Result()
+	return result > 0, err
+}

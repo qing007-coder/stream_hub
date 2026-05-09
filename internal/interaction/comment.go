@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"gorm.io/gorm"
 )
 
 type Comment struct {
@@ -61,6 +62,10 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 
 	oid := res.InsertedID.(primitive.ObjectID)
 
+	if err := c.DB.Model(&storage.VideoModel{}).Where("id = ?", req.VideoId).UpdateColumn("comment_count", gorm.Expr("comment_count + ?", 1)).Error; err != nil {
+		return err
+	}
+
 	eventType := ctx.Value("event_type").(string)
 
 	c.sender.Send(&storage.Event{
@@ -72,7 +77,6 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 		Timestamp:    time.Now().Unix(),
 	})
 
-	// 回填 response
 	resp.Id = oid.Hex()
 	resp.VideoId = doc.VideoID
 	resp.UserId = doc.UserID
@@ -109,6 +113,11 @@ func (c *Comment) DeleteComment(ctx context.Context, req *pb.DeleteCommentReques
 		"user_id": uid,
 	}
 
+	var comment storage.CommentModel
+	if err := collection.FindOne(ctx, filter).Decode(&comment); err != nil {
+		return errors.New("comment not found or no permission")
+	}
+
 	result, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
@@ -116,6 +125,10 @@ func (c *Comment) DeleteComment(ctx context.Context, req *pb.DeleteCommentReques
 
 	if result.DeletedCount == 0 {
 		return errors.New("comment not found or no permission")
+	}
+
+	if err := c.DB.Model(&storage.VideoModel{}).Where("id = ?", comment.VideoID).UpdateColumn("comment_count", gorm.Expr("comment_count - ?", 1)).Error; err != nil {
+		return err
 	}
 
 	resp.Success = true
@@ -179,7 +192,6 @@ func (c *Comment) ListComments(ctx context.Context, req *pb.ListCommentsRequest,
 		})
 	}
 
-	// 是否还有更多
 	resp.Total = int64(len(resp.Comments))
 	return nil
 }

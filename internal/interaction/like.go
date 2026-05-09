@@ -7,6 +7,7 @@ import (
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/constant"
+	infra_model "stream_hub/pkg/model/infra"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 	"time"
@@ -21,8 +22,8 @@ type Like struct {
 
 func NewLike(base *infra.Base, sender *EventSender) *Like {
 	return &Like{
-		base,
-		sender,
+		Base:   base,
+		sender: sender,
 	}
 }
 
@@ -48,10 +49,17 @@ func (l *Like) CreateLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 		return err
 	}
 
-	if err := l.DB.Create(&storage.VideoLikeModel{
-		UserID:  uid,
-		VideoID: req.VideoId,
-	}).Error; err != nil {
+	err = l.TaskSender.SendTask(infra_model.TaskMessage{
+		Type:     constant.TaskStorePersistency,
+		BizID:    req.VideoId,
+		Priority: "normal",
+		Payload: infra_model.TaskPayload{
+			Operator: uid,
+			Action:   constant.ActionCreateLike,
+			Source: constant.Interaction,
+		},
+	})
+	if err != nil {
 		return err
 	}
 
@@ -87,7 +95,17 @@ func (l *Like) DeleteLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 		return err
 	}
 
-	if err := l.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Unscoped().Delete(&storage.VideoLikeModel{}).Error; err != nil {
+	err = l.TaskSender.SendTask(infra_model.TaskMessage{
+		Type:     constant.TaskStorePersistency,
+		BizID:    req.VideoId,
+		Priority: "normal",
+		Payload: infra_model.TaskPayload{
+			Operator: uid,
+			Action:   constant.ActionDeleteLike,
+			Source: constant.Interaction,
+		},
+	})
+	if err != nil {
 		return err
 	}
 
