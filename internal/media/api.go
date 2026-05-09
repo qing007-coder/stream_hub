@@ -149,7 +149,7 @@ func (m *MediaApi) InitUpload(ctx *gin.Context) {
 	info := map[string]interface{}{
 		"upload_id":     id,
 		"upload_chunks": 0,
-		"file_name":     path,
+		"file_name":     fileName,
 		"file_size":     req.FileSize,
 		"chunk_size":    m.ChunkSize,
 	}
@@ -165,7 +165,7 @@ func (m *MediaApi) InitUpload(ctx *gin.Context) {
 
 	m.DB.Create(&storage.FileModel{
 		FileHash: req.FileHash,
-		FilePath: fileName,
+		FilePath: path,
 		Size:     req.FileSize,
 		FileType: req.FileType,
 		Status:   constant.FileStatusUploading,
@@ -203,8 +203,10 @@ func (m *MediaApi) UploadChunk(ctx *gin.Context) {
 	data, _ := file.Open()
 	defer data.Close()
 
+	fmt.Println("record:", record)
 	part, err := m.Minio.Core.PutObjectPart(context.Background(), constant.VideoBucket, record["file_name"], uploadID, partNumber, data, file.Size, minio.PutObjectPartOptions{})
 	if err != nil {
+		fmt.Println("err:", err)
 		utils.InternalServerError(ctx)
 		return
 	}
@@ -212,6 +214,7 @@ func (m *MediaApi) UploadChunk(ctx *gin.Context) {
 	partKey := fmt.Sprintf("part:%d", part.PartNumber)
 	info, err := json.Marshal(part)
 	if err != nil {
+		fmt.Println("err:", err)
 		utils.InternalServerError(ctx)
 		return
 	}
@@ -223,6 +226,7 @@ func (m *MediaApi) UploadChunk(ctx *gin.Context) {
 	pipe.HIncrBy(context.Background(), key, "upload_chunks", 1)
 	_, err = pipe.Exec(context.Background())
 	if err != nil {
+		fmt.Println("err:", err)
 		utils.InternalServerError(ctx)
 		return
 	}
@@ -269,7 +273,7 @@ func (m *MediaApi) CompleteUpload(ctx *gin.Context) {
 
 	_, err = m.Minio.Core.CompleteMultipartUpload(context.Background(), constant.VideoBucket, data["file_name"], req.UploadID, parts, minio.PutObjectOptions{})
 	if err != nil {
-		
+		fmt.Println("err:", err)
 		utils.InternalServerError(ctx)
 		return
 	}
