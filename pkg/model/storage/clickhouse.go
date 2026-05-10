@@ -47,3 +47,17 @@ type Event struct {
 	Source string `ck:"source"` // feed / profile / search
 	Client string `ck:"client"` // web / ios / android
 }
+
+type AdminLogEntry struct {
+	EventTime  float64 `json:"event_time" ck:"event_time,million2time"`
+	Level      string  `json:"level" ck:"level"`
+	AdminID    string  `json:"admin_id" ck:"admin_id"`
+	AdminEmail string  `json:"admin_email" ck:"admin_email"`
+	IP         string  `json:"ip" ck:"ip"`
+	Action     string  `json:"action" ck:"action"`
+	TargetType string  `json:"target_type" ck:"target_type"`
+	TargetID   string  `json:"target_id" ck:"target_id"`
+	Detail     string  `json:"detail" ck:"detail"`
+	Result     string  `json:"result" ck:"result"`
+	Module     string  `json:"module" ck:"module"`
+}

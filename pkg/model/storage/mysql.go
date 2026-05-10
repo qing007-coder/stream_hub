@@ -167,3 +167,15 @@ type VideoCommentModel struct {
 	Content  string `gorm:"type:text;comment:评论内容" json:"content"`
 	ParentID string `gorm:"type:varchar(32);index;comment:父评论ID，一级评论为空" json:"parent_id"`
 }
+
+type Admin struct {
+	BaseModel
+	Email    string `gorm:"type:varchar(128);uniqueIndex" json:"email"`
+	Name     string `gorm:"type:varchar(64)" json:"name"`
+	Password string `gorm:"type:varchar(255);not null" json:"-"`
+	Status   int8   `gorm:"type:tinyint;default:1" json:"status"`
+}
+
+func (Admin) TableName() string {
+	return "admins"
+}

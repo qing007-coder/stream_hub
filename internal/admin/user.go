@@ -8,6 +8,7 @@ import (
 	"stream_hub/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserController struct {
@@ -47,8 +48,8 @@ func (u *UserController) GetUserList(ctx *gin.Context) {
 	}
 
 	if err := query.Order("created_at DESC").Find(&users).Error; err != nil {
-		utils.BadRequest(ctx, fmt.Sprintf("query error: %s", err.Error()))
-		return
+		utils.BadRequest(ctx, err.Error())
+		return 
 	}
 
 	utils.StatusOK(ctx, gin.H{
@@ -108,4 +109,155 @@ func (u *UserController) UpdateUserStatus(ctx *gin.Context) {
 		"user_id": req.TargetUserID,
 		"status":  req.Status,
 	}, "更新成功")
+}
+
+func (u *UserController) InitRootAdmin() error {
+	var count int64
+	u.DB.Model(&storage.Admin{}).Count(&count)
+
+	if count > 0 {
+		return nil
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	admin := storage.Admin{
+		Email:    "admin@streamhub.com",
+		Name:     "Root Admin",
+		Password: string(hashedPassword),
+		Status:   1,
+	}
+
+	return u.DB.Create(&admin).Error
+}
+
+type CreateAdminReq struct {
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required,max=64"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+func (u *UserController) CreateAdmin(ctx *gin.Context) {
+	var req CreateAdminReq
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, "invalid request body: "+err.Error())
+		return
+	}
+
+	var existing storage.Admin
+	if err := u.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+		utils.BadRequest(ctx, "admin email already exists")
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		utils.InternalServerError(ctx)
+		return
+	}
+
+	admin := storage.Admin{
+		Email:    req.Email,
+		Name:     req.Name,
+		Password: string(hashedPassword),
+		Status:   1,
+	}
+
+	if err := u.DB.Create(&admin).Error; err != nil {
+		utils.BadRequest(ctx, "create admin failed: "+err.Error())
+		return
+	}
+
+	utils.StatusOK(ctx, gin.H{
+		"id":    admin.ID,
+		"email": admin.Email,
+		"name":  admin.Name,
+	}, "创建成功")
+}
+
+func (u *UserController) GetAdminList(ctx *gin.Context) {
+	var admins []storage.Admin
+	var total int64
+
+	page := 1
+	size := 10
+
+	if err := u.DB.Model(&storage.Admin{}).Count(&total).Error; err != nil {
+		utils.BadRequest(ctx, "count error: "+err.Error())
+		return
+	}
+
+	offset := (page - 1) * size
+	if err := u.DB.Offset(offset).Limit(size).Order("created_at DESC").Find(&admins).Error; err != nil {
+		utils.BadRequest(ctx, "query error: "+err.Error())
+		return
+	}
+
+	result := make([]gin.H, 0, len(admins))
+	for _, admin := range admins {
+		result = append(result, gin.H{
+			"id":         admin.ID,
+			"email":      admin.Email,
+			"name":       admin.Name,
+			"status":     admin.Status,
+			"created_at": admin.CreatedAt,
+			"updated_at": admin.UpdatedAt,
+		})
+	}
+
+	utils.StatusOK(ctx, gin.H{
+		"total": total,
+		"list":  result,
+	}, "查询成功")
+}
+
+func (u *UserController) UpdateAdminStatus(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var req struct {
+		Status int8 `json:"status" binding:"required,oneof=0 1"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, "invalid request body: "+err.Error())
+		return
+	}
+
+	var admin storage.Admin
+	if err := u.DB.Where("id = ?", id).First(&admin).Error; err != nil {
+		utils.BadRequest(ctx, "admin not found: "+err.Error())
+		return
+	}
+
+	if err := u.DB.Model(&storage.Admin{}).Where("id = ?", id).Update("status", req.Status).Error; err != nil {
+		utils.BadRequest(ctx, "update error: "+err.Error())
+		return
+	}
+
+	utils.StatusOK(ctx, gin.H{
+		"id":     id,
+		"status": req.Status,
+	}, "更新成功")
+}
+
+func (u *UserController) DeleteAdmin(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var admin storage.Admin
+	if err := u.DB.Where("id = ?", id).First(&admin).Error; err != nil {
+		utils.BadRequest(ctx, "admin not found: "+err.Error())
+		return
+	}
+
+	if err := u.DB.Delete(&admin).Error; err != nil {
+		utils.BadRequest(ctx, "delete error: "+err.Error())
+		return
+	}
+
+	utils.StatusOK(ctx, gin.H{
+		"id": id,
+	}, "删除成功")
 }
