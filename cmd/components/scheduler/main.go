@@ -43,6 +43,7 @@ func main() {
 	serveMux.HandleFunc(constant.TaskVideoTranscode, handler.TranscodeHandler)
 	serveMux.HandleFunc(constant.TaskCalculateFeed, handler.CalculateFeed)
 	serveMux.HandleFunc(constant.TaskVideoAudit, handler.AuditVideo)
+	serveMux.HandleFunc(constant.TaskStorePersistency, handler.StorePersistency)
 
 	taskSender, err := infra.NewTaskSender(commonConf)
 	if err != nil {

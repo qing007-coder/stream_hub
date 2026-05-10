@@ -57,6 +57,9 @@ func (r *GatewayRouter) init() {
 			video.DELETE("/delete/:video_id", r.middleware.Auth(), r.gateway.DeleteVideo)
 			video.GET("/list/:user_id", r.middleware.Auth(), r.gateway.ListUserPublishedVideos)
 			video.GET("/my/list", r.middleware.Auth(), r.gateway.ListMyVideos)
+			video.GET("/feed", r.middleware.Auth(), r.gateway.ListFeedVideos)
+			video.GET("/search", r.middleware.Auth(), r.gateway.SearchVideos)
+			video.GET("/hot", r.middleware.Auth(), r.gateway.ListHotVideos)
 		}
 
 		// Interaction API

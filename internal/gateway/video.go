@@ -335,3 +335,183 @@ func (g *Gateway) ListMyVideos(ctx *gin.Context) {
 
 	utils.StatusOK(ctx, apiResp, "Videos retrieved successfully")
 }
+
+// @Summary 获取视频Feed流
+// @Description 获取关注用户的视频Feed流
+// @Tags Video
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param size query int false "每页数量" default(10)
+// @Param last_id query string false "最后一个视频ID，用于分页"
+// @Success 200 {object} map[string]interface{} "成功"
+// @Failure 400 {object} map[string]interface{} "请求错误"
+// @Router /api/video/feed [get]
+// ListFeedVideos 获取视频Feed流
+func (g *Gateway) ListFeedVideos(ctx *gin.Context) {
+	var req api.ListFeedVideosRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	userID := ctx.GetString("user_id")
+	ctxWithMetadata := metadata.NewContext(context.Background(), map[string]string{
+		"user_id": userID,
+	})
+
+	grpcReq := &video.ListFeedVideosRequest{
+		Page:    req.Page,
+		Size:    req.Size,
+		LastId:  req.LastID,
+	}
+
+	resp, err := g.videoClient.ListFeedVideos(ctxWithMetadata, grpcReq)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	var videos []api.FeedVideoInfo
+	for _, v := range resp.Videos {
+		videos = append(videos, api.FeedVideoInfo{
+			ID:             v.Id,
+			Title:          v.Title,
+			CoverURL:       v.CoverUrl,
+			AuthorID:       v.AuthorId,
+			AuthorNickname: v.AuthorNickname,
+			AuthorAvatar:   v.AuthorAvatar,
+			Duration:       v.Duration,
+			LikeCount:      v.LikeCount,
+			CommentCount:   v.CommentCount,
+			CreatedAt:      v.CreatedAt.AsTime(),
+		})
+	}
+
+	apiResp := api.ListFeedVideosResponse{
+		Videos:  videos,
+		Total:   resp.Total,
+		HasMore: resp.HasMore,
+	}
+
+	utils.StatusOK(ctx, apiResp, "Feed videos retrieved successfully")
+}
+
+// @Summary 搜索视频
+// @Description 根据关键词搜索视频
+// @Tags Video
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param keyword query string true "搜索关键词"
+// @Param page query int false "页码" default(1)
+// @Param size query int false "每页数量" default(10)
+// @Success 200 {object} map[string]interface{} "成功"
+// @Failure 400 {object} map[string]interface{} "请求错误"
+// @Router /api/video/search [get]
+// SearchVideos 搜索视频
+func (g *Gateway) SearchVideos(ctx *gin.Context) {
+	var req api.SearchVideosRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	userID := ctx.GetString("user_id")
+	ctxWithMetadata := metadata.NewContext(context.Background(), map[string]string{
+		"user_id": userID,
+	})
+
+	grpcReq := &video.SearchVideosRequest{
+		Keyword: req.Keyword,
+		Page:    req.Page,
+		Size:    req.Size,
+	}
+
+	resp, err := g.videoClient.SearchVideos(ctxWithMetadata, grpcReq)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	var videos []api.PublicVideoInfo
+	for _, v := range resp.Videos {
+		videos = append(videos, api.PublicVideoInfo{
+			ID:        v.Id,
+			Title:     v.Title,
+			CoverURL:  v.CoverUrl,
+			AuthorID:  v.AuthorId,
+			Duration:  v.Duration,
+			CreatedAt: v.CreatedAt.AsTime(),
+		})
+	}
+
+	apiResp := api.SearchVideosResponse{
+		Videos:  videos,
+		Total:   resp.Total,
+		HasMore: resp.HasMore,
+	}
+
+	utils.StatusOK(ctx, apiResp, "Videos searched successfully")
+}
+
+// @Summary 获取热度视频
+// @Description 获取热度视频列表
+// @Tags Video
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param size query int false "每页数量" default(10)
+// @Success 200 {object} map[string]interface{} "成功"
+// @Failure 400 {object} map[string]interface{} "请求错误"
+// @Router /api/video/hot [get]
+// ListHotVideos 获取热度视频
+func (g *Gateway) ListHotVideos(ctx *gin.Context) {
+	var req api.ListHotVideosRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	userID := ctx.GetString("user_id")
+	ctxWithMetadata := metadata.NewContext(context.Background(), map[string]string{
+		"user_id": userID,
+	})
+
+	grpcReq := &video.ListHotVideosRequest{
+		Page: req.Page,
+		Size: req.Size,
+	}
+
+	resp, err := g.videoClient.ListHotVideos(ctxWithMetadata, grpcReq)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	var videos []api.FeedVideoInfo
+	for _, v := range resp.Videos {
+		videos = append(videos, api.FeedVideoInfo{
+			ID:             v.Id,
+			Title:          v.Title,
+			CoverURL:       v.CoverUrl,
+			AuthorID:       v.AuthorId,
+			AuthorNickname: v.AuthorNickname,
+			AuthorAvatar:   v.AuthorAvatar,
+			Duration:       v.Duration,
+			LikeCount:      v.LikeCount,
+			CommentCount:   v.CommentCount,
+			CreatedAt:      v.CreatedAt.AsTime(),
+		})
+	}
+
+	apiResp := api.ListHotVideosResponse{
+		Videos:  videos,
+		Total:   resp.Total,
+		HasMore: resp.HasMore,
+	}
+
+	utils.StatusOK(ctx, apiResp, "Hot videos retrieved successfully")
+}

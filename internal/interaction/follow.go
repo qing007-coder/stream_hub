@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/constant"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
 )
 
 type Follow struct {
@@ -36,6 +38,13 @@ func (f *Follow) CreateFollow(ctx context.Context, req *pb.FollowRequest, resp *
 		UserID:       uid,
 		TargetUserID: req.TargetUserId,
 	}).Error; err != nil {
+		return err
+	}
+
+	if err := f.DB.Model(&storage.User{}).Where("id = ?", uid).UpdateColumn("follow_count", gorm.Expr("follow_count + ?", 1)).Error; err != nil {
+		return err
+	}
+	if err := f.DB.Model(&storage.User{}).Where("id = ?", req.TargetUserId).UpdateColumn("follower_count", gorm.Expr("follower_count + ?", 1)).Error; err != nil {
 		return err
 	}
 
@@ -66,6 +75,13 @@ func (f *Follow) DeleteFollow(ctx context.Context, req *pb.FollowRequest, resp *
 	uid := ctx.Value("user_id").(string)
 
 	if err := f.DB.Where("user_id = ? AND target_user_id = ?", uid, req.TargetUserId).Unscoped().Delete(&storage.UserFollowModel{}).Error; err != nil {
+		return err
+	}
+
+	if err := f.DB.Model(&storage.User{}).Where("id = ?", uid).UpdateColumn("follow_count", gorm.Expr("follow_count - ?", 1)).Error; err != nil {
+		return err
+	}
+	if err := f.DB.Model(&storage.User{}).Where("id = ?", req.TargetUserId).UpdateColumn("follower_count", gorm.Expr("follower_count - ?", 1)).Error; err != nil {
 		return err
 	}
 

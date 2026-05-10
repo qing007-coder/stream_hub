@@ -39,7 +39,7 @@ func (j *Janitor) Run() {
 	for {
 		select {
 		case <-j.ticker.C:
-			log.Println("janitor is scaning")
+			// log.Println("janitor is scaning")
 			if err := j.Scan(); err != nil {
 				if !errors.Is(err, redis.Nil) {
 					log.Println("err:", err)

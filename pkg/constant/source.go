@@ -7,4 +7,5 @@ const (
 	Gateway     = "gateway"
 	Interaction = "interaction"
 	Scheduler   = "scheduler"
+	Admin       = "admin"
 )

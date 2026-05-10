@@ -38,7 +38,7 @@ func (d *Dispatcher) Start() {
 	for {
 		select {
 		case <- d.ticker.C:
-			log.Println("dispatcher is scanning")
+			// log.Println("dispatcher is scanning")
 			if err := d.Scan(context.Background()); err != nil {
 				log.Println("err:", err)
 			}

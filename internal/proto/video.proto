@@ -8,53 +8,63 @@ import "google/protobuf/timestamp.proto";
 
 service VideoService {
 
-  // 创建视频（作者）
   rpc CreateVideo(CreateVideoRequest) returns (AuthorVideoInfo);
 
-  // 获取视频详情
-  // - 作者：返回 AuthorVideoInfo
-  // - 非作者：返回 PublicVideoInfo
   rpc GetVideo(GetVideoRequest) returns (GetVideoResponse);
 
-  // 更新视频元数据（仅作者）
   rpc UpdateVideo(UpdateVideoRequest) returns (AuthorVideoInfo);
 
-  // 删除视频（仅作者）
   rpc DeleteVideo(DeleteVideoRequest) returns (DeleteVideoResponse);
 
-  // 获取某用户的公开视频列表（访客视角）
   rpc ListUserPublishedVideos(ListUserPublishedVideosRequest)
       returns (ListUserPublishedVideosResponse);
 
-  // 获取我自己的视频列表（作者视角）
   rpc ListMyVideos(ListMyVideosRequest)
       returns (ListMyVideosResponse);
+
+  rpc ListFeedVideos(ListFeedVideosRequest)
+      returns (ListFeedVideosResponse);
+
+  rpc SearchVideos(SearchVideosRequest)
+      returns (SearchVideosResponse);
+
+  rpc ListHotVideos(ListHotVideosRequest)
+      returns (ListHotVideosResponse);
 }
 
-// ---------- 公开视频视图（给 Feed / 访客 / 推荐） ----------
 message PublicVideoInfo {
   string id = 1;
   string title = 2;
   string cover_url = 3;
   string author_id = 4;
   int64 duration = 5;
-  google.protobuf.Timestamp created_at = 6;
+  int64 like_count = 6;
+  int64 comment_count = 7;
+  int64 favorite_count = 8;
+  int64 view_count = 9;
+  string m3u8_url = 10;
+  google.protobuf.Timestamp created_at = 11;
 }
 
-// ---------- 作者视图（我的视频 / 管理后台） ----------
 message AuthorVideoInfo {
   string id = 1;
   string title = 2;
   string description = 3;
   string cover_url = 4;
-  int32 is_public = 5;   // 0-私密 1-公开
+  int32 is_public = 5;
   int64 duration = 6;
+  int64 like_count = 7;
+  int64 comment_count = 8;
+  int64 favorite_count = 9;
+  int64 view_count = 10;
+  string m3u8_url = 11;
+  int32 transcode_status = 12;
+  int32 audit_status = 13;
 
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
 }
 
-// ---------- 内部完整模型（仅服务内部 / 管理端使用） ----------
 message InternalVideoInfo {
   string id = 1;
   string title = 2;
@@ -75,7 +85,6 @@ message GetVideoResponse {
   }
 }
 
-// 创建视频
 message CreateVideoRequest {
   string title = 1;
   string description = 2;
@@ -83,12 +92,10 @@ message CreateVideoRequest {
   string cover_url = 4;
 }
 
-// 获取视频
 message GetVideoRequest {
   string video_id = 1;
 }
 
-// 更新视频
 message UpdateVideoRequest {
   string video_id = 1;
   string title = 2;
@@ -97,7 +104,6 @@ message UpdateVideoRequest {
   int32 is_public = 5;
 }
 
-// 删除视频
 message DeleteVideoRequest {
   string video_id = 1;
 }
@@ -107,7 +113,6 @@ message DeleteVideoResponse {
   string message = 2;
 }
 
-// 查看某个用户的公开视频（访客）
 message ListUserPublishedVideosRequest {
   string user_id = 1;
   int32 page = 2;
@@ -119,7 +124,6 @@ message ListUserPublishedVideosResponse {
   int64 total = 2;
 }
 
-// 查看我自己的视频（作者）
 message ListMyVideosRequest {
   int32 page = 1;
   int32 size = 2;
@@ -128,6 +132,55 @@ message ListMyVideosRequest {
 message ListMyVideosResponse {
   repeated AuthorVideoInfo videos = 1;
   int64 total = 2;
+}
+
+message ListFeedVideosRequest {
+  int32 page = 1;
+  int32 size = 2;
+  string last_id = 3;
+}
+
+message ListFeedVideosResponse {
+  repeated FeedVideoInfo videos = 1;
+  int64 total = 2;
+  bool has_more = 3;
+}
+
+message FeedVideoInfo {
+  string id = 1;
+  string title = 2;
+  string cover_url = 3;
+  string author_id = 4;
+  string author_nickname = 5;
+  string author_avatar = 6;
+  int64 duration = 7;
+  int64 like_count = 8;
+  int64 comment_count = 9;
+  string m3u8_url = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message SearchVideosRequest {
+  string keyword = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message SearchVideosResponse {
+  repeated PublicVideoInfo videos = 1;
+  int64 total = 2;
+  bool has_more = 3;
+}
+
+message ListHotVideosRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message ListHotVideosResponse {
+  repeated FeedVideoInfo videos = 1;
+  int64 total = 2;
+  bool has_more = 3;
 }
 
 // protoc --proto_path=. --go_out=./video --go_opt=paths=source_relative --micro_out=./video --micro_opt=paths=source_relative video.proto

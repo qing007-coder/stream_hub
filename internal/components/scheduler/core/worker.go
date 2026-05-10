@@ -105,7 +105,7 @@ func (w *Worker) Start() {
 func (w *Worker) fetch() {
 	for {
 		queue := w.picker.NextQueue()
-		log.Printf("worker %s is fetching, the queue is %s\n", w.id, queue)
+		// log.Printf("worker %s is fetching, the queue is %s\n", w.id, queue)
 		taskID, err := w.rdb.BRPop(context.Background(), 5*time.Second, queue)
 		if err != nil {
 			if !errors.Is(err, redis.Nil) {

@@ -35,6 +35,7 @@ type User struct {
 	Tags string `gorm:"type:varchar(512)" json:"tags"` // 兴趣标签，如 "科技,美食,二次元"
 
 	// 统计数据 (高频变动建议后期抽离到Redis存储)
+	LikeCount     int64 `gorm:"default:0" json:"like_count"`     // 点赞数
 	FollowCount   int64 `gorm:"default:0" json:"follow_count"`   // 关注数
 	FollowerCount int64 `gorm:"default:0" json:"follower_count"` // 粉丝数
 	WorkCount     int64 `gorm:"default:0" json:"work_count"`     // 作品数
@@ -72,19 +73,19 @@ type Task struct {
 	NextRunAt int64 `gorm:"index" json:"next_run_at"`
 
 	// ===== 运维 & 扩展 =====
-	Executor string `gorm:"type:varchar(64);comment:执行节点"`
-	Remark   string `gorm:"type:varchar(255);comment:人工备注"`
+	Executor string `gorm:"type:varchar(64);comment:执行节点" json:"executor"`
+	Remark   string `gorm:"type:varchar(255);comment:人工备注" json:"remark"`
 }
 
 // FileModel 物理文件表：记录 MinIO 中的实际文件信息
 // 只要文件内容一致（Hash相同），该表就只有一条记录
 type FileModel struct {
 	BaseModel
-	FileHash string `gorm:"type:varchar(64);uniqueIndex;not null;comment:文件唯一哈希(MD5或SHA256)"`
-	FilePath string `gorm:"type:varchar(255);not null;comment:MinIO中的存储路径"`
-	Size     int64  `gorm:"comment:文件大小(字节)"`
-	FileType string `gorm:"type:varchar(20);comment:文件后缀名(如.mp4)"`
-	Status   int    `gorm:"default:0;comment:文件状态: 1-上传中, 2-已落地, 3-已转码"`
+	FileHash string `gorm:"type:varchar(64);uniqueIndex;not null;comment:文件唯一哈希(MD5或SHA256)" json:"file_hash"`
+	FilePath string `gorm:"type:varchar(255);not null;comment:MinIO中的存储路径" json:"file_path"`
+	Size     int64  `gorm:"comment:文件大小(字节)" json:"size"`
+	FileType string `gorm:"type:varchar(20);comment:文件后缀名(如.mp4)" json:"file_type"`
+	Status   int    `gorm:"default:0;comment:文件状态: 1-上传中, 2-已落地, 3-已转码" json:"status"`
 }
 
 // TableName 指定表名
@@ -95,12 +96,16 @@ func (FileModel) TableName() string {
 // VideoModel 视频业务表：记录用户上传的视频信息
 type VideoModel struct {
 	BaseModel
-	Title       string `gorm:"type:varchar(100);not null;comment:视频标题"`
-	Description string `gorm:"type:text;comment:视频简介"`
-	AuthorID    string `gorm:"index;comment:上传者用户ID"`
-	CoverUrl    string `gorm:"type:varchar(255);comment:封面图地址"`
-	IsPublic    int    `gorm:"default:0;comment:0-私密 1-开放"`
-	Duration    int64  `gorm:"comment:视频时长(秒)"`
+	Title         string `gorm:"type:varchar(100);not null;comment:视频标题" json:"title"`
+	Description   string `gorm:"type:text;comment:视频简介" json:"description"`
+	AuthorID      string `gorm:"index;comment:上传者用户ID" json:"author_id"`
+	CoverUrl      string `gorm:"type:varchar(255);comment:封面图地址" json:"cover_url"`
+	IsPublic      int    `gorm:"default:0;comment:0-私密 1-开放" json:"is_public"`
+	Duration      int64  `gorm:"comment:视频时长(秒)" json:"duration"`
+	LikeCount     int64  `gorm:"default:0;comment:点赞数" json:"like_count"`
+	CommentCount  int64  `gorm:"default:0;comment:评论数" json:"comment_count"`
+	FavoriteCount int64  `gorm:"default:0;comment:收藏数" json:"favorite_count"`
+	ViewCount     int64  `gorm:"default:0;comment:观看数" json:"view_count"`
 }
 
 func (VideoModel) TableName() string {
@@ -110,13 +115,13 @@ func (VideoModel) TableName() string {
 // MediaModel 媒体资产表：管理视频文件、转码和审核状态
 type MediaModel struct {
 	BaseModel
-	VideoID         string          `gorm:"index;comment:关联视频ID"`
-	Type            string          `gorm:"type:varchar(20);not null;comment:媒体类型(original/transcoded/cover)"`
-	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用"`
-	M3u8Url         string          `gorm:"type:varchar(255);comment:m3u8播放路径"`
-	TranscodeStatus int             `gorm:"default:0;comment:0-待转码 1-转码中 2-转码完成 3-转码失败"`
-	AuditStatus     int             `gorm:"default:0;comment:0-待审核 1-机审中 2-机审通过 3-机审失败 4-人工审核中 5-审核通过 6-审核拒绝 7-封禁"`
-	Metadata        json.RawMessage `gorm:"type:json;not null;comment:媒体原始元数据"`
+	VideoID         string          `gorm:"index;comment:关联视频ID" json:"video_id"`
+	Type            string          `gorm:"type:varchar(20);not null;comment:媒体类型(original/transcoded/cover)" json:"type"`
+	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用" json:"source_object_key"`
+	M3u8Url         string          `gorm:"type:varchar(255);comment:m3u8播放路径" json:"m3u8_url"`
+	TranscodeStatus int             `gorm:"default:0;comment:0-待转码 1-转码中 2-转码完成 3-转码失败" json:"transcode_status"`
+	AuditStatus     int             `gorm:"default:0;comment:0-待审核 1-机审中 2-机审通过 3-机审失败 4-人工审核中 5-审核通过 6-审核拒绝 7-封禁" json:"audit_status"`
+	Metadata        json.RawMessage `gorm:"type:json;not null;comment:媒体原始元数据" json:"metadata"`
 }
 
 func (m *MediaModel) BeforeCreate(tx *gorm.DB) error {
@@ -136,29 +141,41 @@ func (MediaModel) TableName() string {
 
 type VideoLikeModel struct {
 	BaseModel
-	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:点赞用户ID"`
-	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID"`
+	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:点赞用户ID" json:"user_id"`
+	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID" json:"video_id"`
 }
 
 type VideoFavoriteModel struct {
 	BaseModel
 
-	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:收藏用户ID"`
-	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID"`
+	UserID  string `gorm:"type:varchar(32);index:idx_user_video,unique;comment:收藏用户ID" json:"user_id"`
+	VideoID string `gorm:"type:varchar(32);index:idx_user_video,unique;index;comment:视频ID" json:"video_id"`
 }
 
 type UserFollowModel struct {
 	BaseModel
 
-	UserID       string `gorm:"type:varchar(32);index:idx_user_target,unique;comment:关注者"`
-	TargetUserID string `gorm:"type:varchar(32);index:idx_user_target,unique;index;comment:被关注者"`
+	UserID       string `gorm:"type:varchar(32);index:idx_user_target,unique;comment:关注者" json:"user_id"`
+	TargetUserID string `gorm:"type:varchar(32);index:idx_user_target,unique;index;comment:被关注者" json:"target_user_id"`
 }
 
 type VideoCommentModel struct {
 	BaseModel
 
-	VideoID  string `gorm:"type:varchar(32);index;comment:视频ID"`
-	UserID   string `gorm:"type:varchar(32);index;comment:评论用户ID"`
-	Content  string `gorm:"type:text;comment:评论内容"`
-	ParentID string `gorm:"type:varchar(32);index;comment:父评论ID，一级评论为空"`
+	VideoID  string `gorm:"type:varchar(32);index;comment:视频ID" json:"video_id"`
+	UserID   string `gorm:"type:varchar(32);index;comment:评论用户ID" json:"user_id"`
+	Content  string `gorm:"type:text;comment:评论内容" json:"content"`
+	ParentID string `gorm:"type:varchar(32);index;comment:父评论ID，一级评论为空" json:"parent_id"`
+}
+
+type Admin struct {
+	BaseModel
+	Email    string `gorm:"type:varchar(128);uniqueIndex" json:"email"`
+	Name     string `gorm:"type:varchar(64)" json:"name"`
+	Password string `gorm:"type:varchar(255);not null" json:"-"`
+	Status   int8   `gorm:"type:tinyint;default:1" json:"status"`
+}
+
+func (Admin) TableName() string {
+	return "admins"
 }

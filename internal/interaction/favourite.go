@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"stream_hub/internal/infra"
 	pb "stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/constant"
+	infra_model "stream_hub/pkg/model/infra"
 	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type Favourite struct {
@@ -46,12 +48,16 @@ func (f *Favourite) CreateFavorite(ctx context.Context, req *pb.FavoriteRequest,
 		return err
 	}
 
-	if err := f.DB.Create(&storage.VideoFavoriteModel{
-		UserID:  uid,
-		VideoID: req.VideoId,
-	}).Error; err != nil {
-		return err
-	}
+	err = f.TaskSender.SendTask(infra_model.TaskMessage{
+		Type:     constant.TaskStorePersistency,
+		BizID:    req.VideoId,
+		Priority: "normal",
+		Payload: infra_model.TaskPayload{
+			Operator: uid,
+			Action:   constant.ActionCreateFavourite,
+			Source:   constant.Interaction,
+		},
+	})
 
 	eventType := ctx.Value("event_type").(string)
 
@@ -84,9 +90,16 @@ func (f *Favourite) DeleteFavorite(ctx context.Context, req *pb.FavoriteRequest,
 		return err
 	}
 
-	if err := f.DB.Where("user_id = ? and video_id = ?", uid, req.VideoId).Unscoped().Delete(&storage.VideoFavoriteModel{}).Error; err != nil {
-		return err
-	}
+	err = f.TaskSender.SendTask(infra_model.TaskMessage{
+		Type:     constant.TaskStorePersistency,
+		BizID:    req.VideoId,
+		Priority: "normal",
+		Payload: infra_model.TaskPayload{
+			Operator: uid,
+			Action:   constant.ActionDeleteFavourite,
+			Source: constant.Interaction,
+		},
+	})
 
 	resp.Success = true
 	resp.Message = "ok"

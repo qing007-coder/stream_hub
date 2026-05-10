@@ -166,3 +166,21 @@ func NewEventConsumerConfig() (*config.EventConsumerConfig, error) {
 
 	return conf, nil
 }
+
+
+func NewAdminConfig() (*config.AdminConfig, error) {
+	v := viper.New()
+	v.AddConfigPath("./config/")
+	v.SetConfigName("admin")
+	v.SetConfigType("yaml")
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	conf := new(config.AdminConfig)
+	if err := v.Unmarshal(conf); err != nil {
+		return nil, errors.UnmarshalError
+	}
+
+	return conf, nil
+}

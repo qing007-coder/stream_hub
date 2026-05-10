@@ -58,3 +58,13 @@ func UnAuthorizationRequest(ctx *gin.Context, message string) {
 
 	ctx.Abort()
 }
+
+func ForbiddenRequest(ctx *gin.Context, message string) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusForbidden,
+		"data":    nil,
+		"message": message,
+	})
+
+	ctx.Abort()
+}

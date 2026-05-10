@@ -43,8 +43,8 @@ func (t *TaskHandler) AuditVideo(ctx context.Context, task *infra_.TaskMessage) 
 		return errors.New("unknown status")
 	}
 
-	return t.DB.Model(&storage.VideoModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
+	return t.DB.Model(&storage.MediaModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
 		"audit_status": status,
-		"video_meta":   resp,
+		"metadata":   json.RawMessage(data),
 	}).Error
 }

@@ -2,6 +2,8 @@ package core
 
 import (
 	"context"
+	"fmt"
+	"log"
 	infra_ "stream_hub/pkg/model/infra"
 	"sync"
 )
@@ -27,6 +29,12 @@ func (s *ServeMux) HandleFunc(pattern string, handler func(context.Context, *inf
 func (s *ServeMux) Execute(ctx context.Context, pattern string, task *infra_.TaskMessage) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	handler := s.mux[pattern]
-	return handler(ctx, task)
+	if handler, ok := s.mux[pattern]; ok {
+		if err := handler(ctx, task); err != nil {
+			log.Println("err:", err)
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("invalid pattern: %s", pattern)
 }
