@@ -90,7 +90,7 @@ func (r *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data i
 			row = append(row, fieldVal)
 		}
 
-		if (table == constant.StorageUserLog && len(row) != 11) || (table == constant.StorageEvent && len(row) != 9) {
+		if (table == constant.StorageUserLog && len(row) != 11) || (table == constant.StorageEvent && len(row) != 9) || (table == constant.StorageAdminLog && len(row) != 11) {
 			return fmt.Errorf("字段对齐失败: 请检查 ck 标签是否写漏了", len(row))
 		}
 
