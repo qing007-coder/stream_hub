@@ -141,6 +141,7 @@ func (w *Worker) execute(task *infra_.TaskMessage) {
 	if err := w.db.Model(&storage.Task{}).Where("id = ?", task.TaskID).Updates(map[string]interface{}{
 		"status":      constant.TaskSuccess,
 		"retry_count": task.RetryCount,
+		"executor": "localhost",
 	}).Error; err != nil {
 		log.Println("db.Updates err:", err)
 		return
