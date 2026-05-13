@@ -73,6 +73,7 @@ func (l *Like) CreateLike(ctx context.Context, req *pb.LikeRequest, resp *pb.Act
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
 	})
+	l.notifyVideoAuthor(req.VideoId, uid, "赞了你的视频")
 
 	resp.Success = true
 	resp.Message = "ok"

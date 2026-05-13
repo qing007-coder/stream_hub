@@ -33,6 +33,7 @@ type UpdatePasswordReq struct {
 }
 
 type GetUserProfileResp struct {
+	UserID         string `json:"user_id"`
 	Email          string `json:"email"`
 	Nickname       string `json:"nickname"`
 	BackgroundUrl  string `json:"background_url"`
@@ -43,4 +44,18 @@ type GetUserProfileResp struct {
 	FollowerCount  int64  `json:"follower_count"`
 	WorkCount      int64  `json:"work_count"`
 	FavouriteCount int64  `json:"favourite_count"`
+}
+
+type GetUserInfoReq struct {
+	UserID string `json:"user_id" uri:"user_id" binding:"required"`
+}
+
+type GetUserInfoResp struct {
+	UserID        string `json:"user_id"`
+	Nickname      string `json:"nickname"`
+	Avatar        string `json:"avatar"`
+	Signature     string `json:"signature"`
+	FollowerCount int64  `json:"follower_count"`
+	FollowCount   int64  `json:"follow_count"`
+	WorkCount     int64  `json:"work_count"`
 }

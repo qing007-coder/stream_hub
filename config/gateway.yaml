@@ -3,6 +3,7 @@ port: 8080
 service:
   interaction_service: "interaction_master"
   video_service: "video_master"
+  user_service: "localhost:8081"
 
 metrics:
   counter_vector:

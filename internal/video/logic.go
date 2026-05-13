@@ -7,7 +7,9 @@ import (
 	"stream_hub/pkg/utils"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 
 	"stream_hub/internal/infra"
 	"stream_hub/internal/proto/video"
@@ -52,6 +54,10 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 		return err
 	}
 
+	if err := v.DB.Model(&storage.User{}).Where("id = ?", uid).UpdateColumn("work_count", gorm.Expr("work_count + ?", 1)).Error; err != nil {
+		return err
+	}
+
 	v.fillAuthorVideoInfo(resp, &model, &media)
 
 	eventType := ctx.Value("event_type").(string)
@@ -86,8 +92,8 @@ func (v *Video) CreateVideo(ctx context.Context, req *video.CreateVideoRequest, 
 func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *video.GetVideoResponse) error {
 	uid := ctx.Value("user_id").(string)
 
-	var model storage.VideoModel
-	if err := v.DB.Where("id = ?", req.VideoId).First(&model).Error; err != nil {
+	var videoModel storage.VideoModel
+	if err := v.DB.Where("id = ?", req.VideoId).First(&videoModel).Error; err != nil {
 		return err
 	}
 
@@ -96,21 +102,47 @@ func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *
 		return err
 	}
 
-	if uid == model.AuthorID {
-		info := &video.AuthorVideoInfo{}
-		v.fillAuthorVideoInfo(info, &model, &media)
-		resp.Data = &video.GetVideoResponse_AuthorVideo{
-			AuthorVideo: info,
-		}
-		return nil
+	pipeline := v.Redis.Pipeline()
+	resultCmd := pipeline.ZAdd(ctx, fmt.Sprintf("video:view:user:%s", req.VideoId), &redis.Z{
+		Score:  float64(time.Now().Unix()),
+		Member: uid,
+	})
+	pipeline.ZAdd(ctx, fmt.Sprintf("user:view:%s", uid), &redis.Z{
+		Score:  float64(time.Now().Unix()),
+		Member: req.VideoId,
+	})
+
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		return err
 	}
 
-	if model.IsPublic == constant.VideoPublic && (media.AuditStatus == constant.VideoStatusMachinePassed || media.AuditStatus == constant.VideoStatusApproved) {
-		info := &video.PublicVideoInfo{}
-		v.fillPublicVideoInfo(info, &model, &media)
-		resp.Data = &video.GetVideoResponse_PublicVideo{
-			PublicVideo: info,
+	result, err := resultCmd.Result()
+	if err != nil {
+		return err
+	}
+
+	if result == 1 {
+		if err := v.DB.Model(&storage.VideoModel{}).
+			Where("id = ?", req.VideoId).
+			Update("view_count", gorm.Expr("view_count + ?", 1)).Error; err != nil {
+			return err
 		}
+		videoModel.ViewCount++
+	}
+
+	if uid == videoModel.AuthorID || (videoModel.IsPublic == constant.VideoPublic && (media.AuditStatus == constant.VideoStatusMachinePassed || media.AuditStatus == constant.VideoStatusApproved)) {
+		resp.Id = videoModel.ID
+		resp.Title = videoModel.Title
+		resp.CoverUrl = videoModel.CoverUrl
+		resp.AuthorId = videoModel.AuthorID
+		resp.Duration = videoModel.Duration
+		resp.LikeCount = videoModel.LikeCount
+		resp.CommentCount = videoModel.CommentCount
+		resp.FavoriteCount = videoModel.FavoriteCount
+		resp.ViewCount = videoModel.ViewCount
+		resp.M3U8Url = media.M3u8Url
+		resp.CreatedAt = timestamppb.New(videoModel.CreatedAt)
 		return nil
 	}
 
@@ -120,18 +152,29 @@ func (v *Video) GetVideo(ctx context.Context, req *video.GetVideoRequest, resp *
 func (v *Video) UpdateVideo(ctx context.Context, req *video.UpdateVideoRequest, resp *video.AuthorVideoInfo) error {
 	uid := ctx.Value("user_id").(string)
 
-	updates := map[string]interface{}{
-		"title":       req.Title,
-		"description": req.Description,
-		"cover_url":   req.CoverUrl,
-		"is_public":   req.IsPublic,
-	}
+	updates := make(map[string]interface{})
+    
+    if req.Title != "" {
+        updates["title"] = req.Title
+    }
+    if req.Description != "" {
+        updates["description"] = req.Description
+    }
+    if req.CoverUrl != "" {
+        updates["cover_url"] = req.CoverUrl
+    }
 
-	if err := v.DB.Model(&storage.VideoModel{}).
-		Where("id = ? and author_id = ?", req.VideoId, uid).
-		Updates(updates).Error; err != nil {
-		return err
-	}
+    updates["is_public"] = req.IsPublic 
+
+    if len(updates) == 0 {
+        return nil 
+    }
+
+    if err := v.DB.Model(&storage.VideoModel{}).
+        Where("id = ? and author_id = ?", req.VideoId, uid).
+        Updates(updates).Error; err != nil {
+        return err
+    }
 
 	var model storage.VideoModel
 	if err := v.DB.Where("id = ?", req.VideoId).First(&model).Error; err != nil {
@@ -421,6 +464,8 @@ func (v *Video) ListFeedVideos(ctx context.Context, req *video.ListFeedVideosReq
 			CommentCount:   vd.CommentCount,
 			CreatedAt:      timestamppb.New(vd.CreatedAt),
 			M3U8Url:        media.M3u8Url,
+			ViewCount:      vd.ViewCount,
+			FavoriteCount:  vd.FavoriteCount,
 		}
 		resp.Videos = append(resp.Videos, feedVideo)
 	}
@@ -565,6 +610,8 @@ func (v *Video) ListHotVideos(ctx context.Context, req *video.ListHotVideosReque
 			CommentCount:   vd.CommentCount,
 			CreatedAt:      timestamppb.New(vd.CreatedAt),
 			M3U8Url:        media.M3u8Url,
+			FavoriteCount:  vd.FavoriteCount,
+			ViewCount:      vd.ViewCount,
 		})
 	}
 

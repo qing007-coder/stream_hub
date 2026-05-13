@@ -125,6 +125,7 @@ func (m *Middleware) Auth() gin.HandlerFunc {
 
 			utils.UnAuthorizationRequest(ctx, "token invalid")
 			ctx.Abort()
+			return
 		}
 
 		ctx.Set("user_id", claims.UserID)

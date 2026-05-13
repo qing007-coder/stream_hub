@@ -24,6 +24,7 @@ import (
 type GatewayRouter struct {
 	router     *gin.Engine
 	gateway    *Gateway
+	userApi    *UserApi
 	middleware *Middleware
 	port       int
 }
@@ -34,6 +35,7 @@ func NewGatewayRouter(base *infra.Base, auth *security.Auth, ratelimiter *infra.
 	router := &GatewayRouter{
 		port:       conf.Port,
 		gateway:    NewGateway(base, srv, conf),
+		userApi:    NewUserApi(conf.Service.UserService),
 		middleware: NewMiddleware(base, ratelimiter, auth),
 	}
 
@@ -62,6 +64,13 @@ func (r *GatewayRouter) init() {
 			video.GET("/hot", r.middleware.Auth(), r.gateway.ListHotVideos)
 		}
 
+		// User API
+		user := api.Group("/user")
+		{
+			user.GET("/info/:user_id", r.middleware.Auth(), r.userApi.GetUserInfo)
+			user.GET("/profile", r.middleware.Auth(), r.userApi.GetUserProfile)
+		}
+
 		// Interaction API
 		interaction := api.Group("/interaction")
 		{
@@ -74,6 +83,7 @@ func (r *GatewayRouter) init() {
 			interaction.POST("/favorite/:video_id", r.middleware.Auth(), r.gateway.CreateFavorite)
 			interaction.DELETE("/favorite/:video_id", r.middleware.Auth(), r.gateway.DeleteFavorite)
 			interaction.GET("/favorite/:video_id", r.middleware.Auth(), r.gateway.IsFavorite)
+			interaction.GET("/favorites", r.middleware.Auth(), r.gateway.ListFavorites)
 
 			interaction.POST("/follow/:target_user_id", r.middleware.Auth(), r.gateway.CreateFollow)
 			interaction.DELETE("/follow/:target_user_id", r.middleware.Auth(), r.gateway.DeleteFollow)

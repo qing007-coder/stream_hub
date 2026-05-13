@@ -76,10 +76,13 @@ func (c *Comment) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
 	})
+	c.notifyVideoAuthor(req.VideoId, uid, "评论了你的视频："+req.Content)
 
 	resp.Id = oid.Hex()
 	resp.VideoId = doc.VideoID
 	resp.UserId = doc.UserID
+	resp.Nickname = doc.Nickname
+	resp.Avatar = doc.Avatar
 	resp.Content = doc.Content
 	resp.ParentId = doc.ParentID
 	resp.ReplyToUserId = doc.ReplyToUserID
@@ -183,6 +186,8 @@ func (c *Comment) ListComments(ctx context.Context, req *pb.ListCommentsRequest,
 			Id:            doc.ID.Hex(),
 			VideoId:       doc.VideoID,
 			UserId:        doc.UserID,
+			Nickname:      doc.Nickname,
+			Avatar:        doc.Avatar,
 			Content:       doc.Content,
 			ParentId:      doc.ParentID,
 			ReplyToUserId: doc.ReplyToUserID,

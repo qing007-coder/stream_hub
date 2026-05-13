@@ -29,7 +29,7 @@ func NewClickhouse(conf *config.CommonConfig) (*Clickhouse, error) {
 }
 
 // BatchInsertStruct 传入结构体切片，自动解析写入
-func (r *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data interface{}) error {
+func (c *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data interface{}) error {
 	v := reflect.ValueOf(data)
 	if v.Kind() != reflect.Slice {
 		return fmt.Errorf("data must be a slice")
@@ -63,7 +63,7 @@ func (r *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data i
 		}
 	}
 
-	batch, err := r.conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s (%s)", table, strings.Join(columns, ",")))
+	batch, err := c.conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s (%s)", table, strings.Join(columns, ",")))
 	if err != nil {
 		return err
 	}
@@ -100,4 +100,8 @@ func (r *Clickhouse) BatchInsertStruct(ctx context.Context, table string, data i
 	}
 
 	return batch.Send()
+}
+
+func (c *Clickhouse) Query(ctx context.Context, query string, args ...any) (driver.Rows, error) {
+	return c.conn.Query(ctx, query, args...)
 }

@@ -79,10 +79,17 @@ message InternalVideoInfo {
 }
 
 message GetVideoResponse {
-  oneof data {
-    PublicVideoInfo public_video = 1;
-    AuthorVideoInfo author_video = 2;
-  }
+  string id = 1;
+  string title = 2;
+  string cover_url = 3;
+  string author_id = 4;
+  int64 duration = 5;
+  int64 like_count = 6;
+  int64 comment_count = 7;
+  int64 favorite_count = 8;
+  int64 view_count = 9;
+  string m3u8_url = 10;
+  google.protobuf.Timestamp created_at = 11;
 }
 
 message CreateVideoRequest {
@@ -156,8 +163,10 @@ message FeedVideoInfo {
   int64 duration = 7;
   int64 like_count = 8;
   int64 comment_count = 9;
-  string m3u8_url = 10;
-  google.protobuf.Timestamp created_at = 11;
+  int64 favorite_count = 10;
+  int64 view_count = 11;
+  string m3u8_url = 12;
+  google.protobuf.Timestamp created_at = 13;
 }
 
 message SearchVideosRequest {
