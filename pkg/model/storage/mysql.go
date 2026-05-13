@@ -117,7 +117,7 @@ type MediaModel struct {
 	BaseModel
 	VideoID         string          `gorm:"index;comment:关联视频ID" json:"video_id"`
 	Type            string          `gorm:"type:varchar(20);not null;comment:媒体类型(original/transcoded/cover)" json:"type"`
-	SourceObjectKey string          `gorm:"type:varchar(64);index;comment:原视频文件引用" json:"source_object_key"`
+	SourceObjectKey string          `gorm:"type:varchar(255);index;comment:原视频文件引用" json:"source_object_key"`
 	M3u8Url         string          `gorm:"type:varchar(255);comment:m3u8播放路径" json:"m3u8_url"`
 	TranscodeStatus int             `gorm:"default:0;comment:0-待转码 1-转码中 2-转码完成 3-转码失败" json:"transcode_status"`
 	AuditStatus     int             `gorm:"default:0;comment:0-待审核 1-机审中 2-机审通过 3-机审失败 4-人工审核中 5-审核通过 6-审核拒绝 7-封禁" json:"audit_status"`
@@ -168,6 +168,31 @@ type VideoCommentModel struct {
 	ParentID string `gorm:"type:varchar(32);index;comment:父评论ID，一级评论为空" json:"parent_id"`
 }
 
+type MessageModel struct {
+	BaseModel
+	SenderID    string `gorm:"type:varchar(32);index;comment:发送者ID" json:"sender_id"`
+	ReceiverID  string `gorm:"type:varchar(32);index;comment:接收者ID" json:"receiver_id"`
+	Content     string `gorm:"type:text;comment:消息内容" json:"content"`
+	ContentType int8   `gorm:"type:tinyint;default:1;comment:消息类型 1-文本 2-图片 3-语音" json:"content_type"`
+	Status      int8   `gorm:"type:tinyint;default:0;comment:状态 0-未读 1-已读" json:"status"`
+}
+
+func (MessageModel) TableName() string {
+	return "im_messages"
+}
+
+type ConversationModel struct {
+	BaseModel
+	UserID        string `gorm:"type:varchar(32);index;comment:用户ID" json:"user_id"`
+	TargetUserID  string `gorm:"type:varchar(32);index;comment:目标用户ID" json:"target_user_id"`
+	LastMessageID string `gorm:"type:varchar(32);comment:最后一条消息ID" json:"last_message_id"`
+	UnreadCount   int    `gorm:"default:0;comment:未读消息数" json:"unread_count"`
+}
+
+func (ConversationModel) TableName() string {
+	return "im_conversations"
+}
+
 type Admin struct {
 	BaseModel
 	Email    string `gorm:"type:varchar(128);uniqueIndex" json:"email"`
@@ -178,4 +203,18 @@ type Admin struct {
 
 func (Admin) TableName() string {
 	return "admins"
+}
+
+type Rule struct {
+	BaseModel
+	Type string `gorm:"column:type;type:varchar(64);index" json:"type"`
+	V0   string `gorm:"column:V0;type:varchar(128);index" json:"v0"`
+	V1   string `gorm:"column:V1;type:varchar(128);index" json:"v1"`
+	V2   string `gorm:"column:V2;type:varchar(128);index" json:"v2"`
+	V3   string `gorm:"column:V3;type:varchar(128)" json:"v3"`
+	V4   string `gorm:"column:V4;type:varchar(128)" json:"v4"`
+}
+
+func (Rule) TableName() string {
+	return "permissions"
 }
