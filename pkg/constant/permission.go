@@ -6,3 +6,9 @@ const (
 	RoleReviewer string = "REVIEWER"
 	RoleAdmin    string = "ADMIN"
 )
+
+const (
+	TypeGroup  string = "group"
+	TypePolicy string = "policy"
+)
+

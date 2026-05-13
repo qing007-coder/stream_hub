@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"fmt"
 	"stream_hub/internal/infra"
 	"stream_hub/pkg/model/api"
@@ -48,8 +49,8 @@ func (u *UserController) GetUserList(ctx *gin.Context) {
 	}
 
 	if err := query.Order("created_at DESC").Find(&users).Error; err != nil {
-		utils.BadRequest(ctx, err.Error())
-		return 
+		utils.BadRequest(ctx, fmt.Sprintf("query error: %s", err.Error()))
+		return
 	}
 
 	utils.StatusOK(ctx, gin.H{
@@ -260,4 +261,107 @@ func (u *UserController) DeleteAdmin(ctx *gin.Context) {
 	utils.StatusOK(ctx, gin.H{
 		"id": id,
 	}, "删除成功")
+}
+
+func (u *UserController) GetAdminLogs(ctx *gin.Context) {
+	adminID := ctx.Query("admin_id")
+	action := ctx.Query("action")
+	startTime := ctx.Query("start_time")
+	endTime := ctx.Query("end_time")
+	page := 1
+	size := 20
+
+	query := "SELECT * FROM stream_hub.admin_logs WHERE 1=1"
+	var args []interface{}
+
+	if adminID != "" {
+		query += " AND admin_id = ?"
+		args = append(args, adminID)
+	}
+
+	if action != "" {
+		query += " AND action = ?"
+		args = append(args, action)
+	}
+
+	if startTime != "" {
+		query += " AND event_time >= ?"
+		args = append(args, startTime)
+	}
+
+	if endTime != "" {
+		query += " AND event_time <= ?"
+		args = append(args, endTime)
+	}
+
+	query += " ORDER BY event_time DESC"
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", size, (page-1)*size)
+
+	rows, err := u.Clickhouse.Query(context.Background(), query, args...)
+	if err != nil {
+		utils.BadRequest(ctx, "query logs failed: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	var logs []storage.AdminLogEntry
+	for rows.Next() {
+		var log storage.AdminLogEntry
+		if err := rows.Scan(
+			&log.EventTime,
+			&log.Level,
+			&log.AdminID,
+			&log.AdminEmail,
+			&log.IP,
+			&log.Action,
+			&log.TargetType,
+			&log.TargetID,
+			&log.Detail,
+			&log.Result,
+			&log.Module,
+		); err != nil {
+			utils.BadRequest(ctx, "scan log failed: "+err.Error())
+			return
+		}
+		logs = append(logs, log)
+	}
+
+	countQuery := "SELECT COUNT(*) FROM stream_hub.admin_logs WHERE 1=1"
+	countArgs := make([]interface{}, 0)
+	if adminID != "" {
+		countQuery += " AND admin_id = ?"
+		countArgs = append(countArgs, adminID)
+	}
+	if action != "" {
+		countQuery += " AND action = ?"
+		countArgs = append(countArgs, action)
+	}
+	if startTime != "" {
+		countQuery += " AND event_time >= ?"
+		countArgs = append(countArgs, startTime)
+	}
+	if endTime != "" {
+		countQuery += " AND event_time <= ?"
+		countArgs = append(countArgs, endTime)
+	}
+
+	countRows, err := u.Clickhouse.Query(context.Background(), countQuery, countArgs...)
+	if err != nil {
+		utils.BadRequest(ctx, "count logs failed: "+err.Error())
+		return
+	}
+	defer countRows.Close()
+
+	var total int64
+	if countRows.Next() {
+		if err := countRows.Scan(&total); err != nil {
+			utils.BadRequest(ctx, "scan count failed: "+err.Error())
+			return
+		}
+	}
+
+	utils.StatusOK(ctx, gin.H{
+		"total": total,
+		"list":  logs,
+	}, "查询成功")
 }

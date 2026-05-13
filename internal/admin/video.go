@@ -37,8 +37,11 @@ func (v *VideoController) GetVideoList(ctx *gin.Context) {
 		query = query.Where("author_id = ?", req.UserID)
 	}
 
-	if req.IsPublic {
+	switch req.IsPublic {
+	case 1:
 		query = query.Where("is_public = ?", constant.VideoPublic)
+	case 2:
+		query = query.Where("is_public = ?", constant.VideoPrivate)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -174,10 +177,10 @@ func (v *VideoController) GetVideoInteractionDetail(ctx *gin.Context) {
 	}
 
 	utils.StatusOK(ctx, gin.H{
-		"video_id":       id,
-		"like_count":     likeCount,
-		"comment_count":  commentCount,
-		"favorite_count": favoriteCount,
+		"video_id":        id,
+		"like_count":      likeCount,
+		"comment_count":   commentCount,
+		"favorite_count":  favoriteCount,
 		"recent_comments": comments,
 	}, "查询成功")
 }

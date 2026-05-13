@@ -7,6 +7,7 @@ import (
 	"stream_hub/pkg/model/config"
 
 	"github.com/gin-gonic/gin"
+	"github.com/IBM/sarama"
 )
 
 type AdminRouter struct {
@@ -16,17 +17,19 @@ type AdminRouter struct {
 	user       *UserController
 	video      *VideoController
 	task       *TaskController
+	message    *MessageController
 	api        *ApiController
 	port       int
 }
 
-func NewAdminRouter(base *infra.Base, auth *security.Auth, conf *config.AdminConfig) *AdminRouter {
+func NewAdminRouter(base *infra.Base, auth *security.Auth, conf *config.AdminConfig, producer sarama.AsyncProducer) *AdminRouter {
 	r := new(AdminRouter)
 	r.middleware = NewMiddleware(base, auth)
 	r.auth = NewAuthController(base, auth)
 	r.user = NewUserController(base)
 	r.video = NewVideoController(base)
 	r.task = NewTaskController(base)
+	r.message = NewMessageController(base, producer)
 	r.api = NewApiController(base)
 	r.port = conf.Port
 	r.init()
@@ -65,6 +68,7 @@ func (r *AdminRouter) init() {
 			admins.POST("/create", r.user.CreateAdmin)
 			admins.PUT("/status/:id", r.user.UpdateAdminStatus)
 			admins.DELETE("/delete/:id", r.user.DeleteAdmin)
+			admins.GET("/logs", r.user.GetAdminLogs)
 		}
 
 		videos := admin.Group("/videos")
@@ -82,6 +86,12 @@ func (r *AdminRouter) init() {
 			tasks.GET("/list", r.task.GetTaskList)
 			tasks.GET("/detail/:id", r.task.GetTaskDetail)
 			tasks.PUT("/status", r.task.UpdateTaskStatus)
+		}
+
+		messages := admin.Group("/messages")
+		{
+			messages.GET("/system", r.message.GetSystemMessages)
+			messages.POST("/system/send", r.message.SendSystemMessage)
 		}
 	}
 }

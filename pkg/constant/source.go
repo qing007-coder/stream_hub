@@ -8,4 +8,5 @@ const (
 	Interaction = "interaction"
 	Scheduler   = "scheduler"
 	Admin       = "admin"
+	IM          = "im"
 )

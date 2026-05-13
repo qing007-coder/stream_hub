@@ -184,3 +184,20 @@ func NewAdminConfig() (*config.AdminConfig, error) {
 
 	return conf, nil
 }
+
+func NewIMConfig() (*config.IMConfig, error) {
+	v := viper.New()
+	v.AddConfigPath("./config/")
+	v.SetConfigName("im")
+	v.SetConfigType("yaml")
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	conf := new(config.IMConfig)
+	if err := v.Unmarshal(conf); err != nil {
+		return nil, errors.UnmarshalError
+	}
+
+	return conf, nil
+}
