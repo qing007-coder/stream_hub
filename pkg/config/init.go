@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/spf13/viper"
 	"stream_hub/pkg/errors"
 	"stream_hub/pkg/model/config"
@@ -8,6 +10,9 @@ import (
 
 func NewCommonConfig() (*config.CommonConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("common")
 	v.SetConfigType("yaml")
@@ -27,6 +32,9 @@ func NewCommonConfig() (*config.CommonConfig, error) {
 
 func NewMediaConfig() (*config.MediaConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("media")
 	v.SetConfigType("yaml")
@@ -46,6 +54,9 @@ func NewMediaConfig() (*config.MediaConfig, error) {
 
 func NewUserConfig() (*config.UserConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("user")
 	v.SetConfigType("yaml")
@@ -65,6 +76,9 @@ func NewUserConfig() (*config.UserConfig, error) {
 
 func NewLoggerConfig() (*config.LoggerConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("logger")
 	v.SetConfigType("yaml")
@@ -84,6 +98,9 @@ func NewLoggerConfig() (*config.LoggerConfig, error) {
 
 func NewVideoConfig() (*config.VideoConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("video")
 	v.SetConfigType("yaml")
@@ -101,6 +118,9 @@ func NewVideoConfig() (*config.VideoConfig, error) {
 
 func NewInteractionConfig() (*config.InteractionConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("interaction")
 	v.SetConfigType("yaml")
@@ -118,6 +138,9 @@ func NewInteractionConfig() (*config.InteractionConfig, error) {
 
 func NewGatewayConfig() (*config.GatewayConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("gateway")
 	v.SetConfigType("yaml")
@@ -135,6 +158,9 @@ func NewGatewayConfig() (*config.GatewayConfig, error) {
 
 func NewSchedulerConfig() (*config.SchedulerConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("scheduler")
 	v.SetConfigType("yaml")
@@ -152,6 +178,9 @@ func NewSchedulerConfig() (*config.SchedulerConfig, error) {
 
 func NewEventConsumerConfig() (*config.EventConsumerConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("event_consumer")
 	v.SetConfigType("yaml")
@@ -170,6 +199,9 @@ func NewEventConsumerConfig() (*config.EventConsumerConfig, error) {
 
 func NewAdminConfig() (*config.AdminConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("admin")
 	v.SetConfigType("yaml")
@@ -187,6 +219,9 @@ func NewAdminConfig() (*config.AdminConfig, error) {
 
 func NewIMConfig() (*config.IMConfig, error) {
 	v := viper.New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
 	v.AddConfigPath("./config/")
 	v.SetConfigName("im")
 	v.SetConfigType("yaml")

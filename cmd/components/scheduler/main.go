@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 
-	handler, err := task_handler.NewTaskHandler(commonConf, base)
+	handler, err := task_handler.NewTaskHandler(commonConf, schedulerConf, base)
 	if err != nil {
 		fmt.Println("err:", err)
 		return

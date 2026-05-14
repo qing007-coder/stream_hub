@@ -17,9 +17,9 @@ func (t *TaskHandler) AuditVideo(ctx context.Context, task *infra_.TaskMessage) 
 		return err
 	}
 	req := api.MachineAudit{
-		TargetURL: fmt.Sprintf("http://192.168.233.128:9100%s", media.M3u8Url),
+		TargetURL: fmt.Sprintf("%s%s", t.mediaPrefix, media.M3u8Url),
 	}
-	data, err := t.PostJSON("http://127.0.0.1:8088/audit", req)
+	data, err := t.PostJSON(t.auditServer+"/audit", req)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (t *TaskHandler) AuditVideo(ctx context.Context, task *infra_.TaskMessage) 
 
 	if err := t.DB.Model(&storage.MediaModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
 		"audit_status": status,
-		"metadata":   json.RawMessage(data),
+		"metadata":     json.RawMessage(data),
 	}).Error; err != nil {
 		return err
 	}

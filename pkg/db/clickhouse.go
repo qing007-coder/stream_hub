@@ -3,11 +3,12 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"log"
 	"stream_hub/pkg/model/config"
-	"time"
 )
 
 type ClickhouseClient struct {
@@ -24,7 +25,7 @@ func NewClickhouseClient(conf *config.CommonConfig) (*ClickhouseClient, error) {
 		Auth: clickhouse.Auth{
 			Database: conf.Clickhouse.Database,
 			Username: conf.Clickhouse.Username,
-			Password: "",
+			Password: conf.Clickhouse.Password,
 		},
 		Settings: clickhouse.Settings{
 			"max_execution_time": 60,

@@ -18,8 +18,28 @@ func NewMongoClient(conf *config.CommonConfig) (*MongoClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().
-		ApplyURI(fmt.Sprintf("mongodb://%s:%s", conf.MongoDB.Addr, conf.MongoDB.Port)))
+	uri := fmt.Sprintf("mongodb://%s:%s", conf.MongoDB.Addr, conf.MongoDB.Port)
+
+	if conf.MongoDB.Username != "" && conf.MongoDB.Password != "" {
+		uri = fmt.Sprintf("mongodb://%s:%s@%s:%s",
+			conf.MongoDB.Username,
+			conf.MongoDB.Password,
+			conf.MongoDB.Addr,
+			conf.MongoDB.Port,
+		)
+	}
+
+	clientOptions := options.Client().ApplyURI(uri)
+
+	if conf.MongoDB.Database != "" {
+		clientOptions.SetAuth(options.Credential{
+			AuthSource: conf.MongoDB.Database,
+			Username:   conf.MongoDB.Username,
+			Password:   conf.MongoDB.Password,
+		})
+	}
+
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, err
 	}

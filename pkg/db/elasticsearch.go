@@ -1,9 +1,13 @@
 package db
 
 import (
+	"crypto/tls"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v8"
+	"net/http"
+
 	"stream_hub/pkg/model/config"
+
+	"github.com/elastic/go-elasticsearch/v8"
 )
 
 type ElasticSearchClient struct {
@@ -11,10 +15,19 @@ type ElasticSearchClient struct {
 }
 
 func NewElasticSearchClient(conf *config.CommonConfig) (*ElasticSearchClient, error) {
-	client, err := elasticsearch.NewTypedClient(elasticsearch.Config{
+	esCfg := elasticsearch.Config{
 		Addresses: []string{fmt.Sprintf("%s:%s", conf.Elasticsearch.Addr, conf.Elasticsearch.Port)},
-	})
+	}
 
+	if conf.Elasticsearch.Username != "" && conf.Elasticsearch.Password != "" {
+		esCfg.Username = conf.Elasticsearch.Username
+		esCfg.Password = conf.Elasticsearch.Password
+		esCfg.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	client, err := elasticsearch.NewTypedClient(esCfg)
 	if err != nil {
 		return nil, err
 	}

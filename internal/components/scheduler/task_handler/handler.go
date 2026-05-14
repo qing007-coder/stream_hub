@@ -16,14 +16,16 @@ import (
 )
 
 type TaskHandler struct {
-	client *http.Client
-	email  *email.Client
-	imProducer sarama.AsyncProducer
+	client       *http.Client
+	email        *email.Client
+	imProducer   sarama.AsyncProducer
 	*infra.Base
-	taskSender *infra.TaskSender // 用来做DAG 任务依赖链
+	taskSender   *infra.TaskSender // 用来做DAG 任务依赖链
+	mediaPrefix  string
+	auditServer  string
 }
 
-func NewTaskHandler(conf *config.CommonConfig, base *infra.Base) (*TaskHandler, error) {
+func NewTaskHandler(conf *config.CommonConfig, schedulerConf *config.SchedulerConfig, base *infra.Base) (*TaskHandler, error) {
 	email := email.NewClient(conf)
 	taskSender, err := infra.NewTaskSender(conf)
 	if err != nil {
@@ -43,13 +45,15 @@ func NewTaskHandler(conf *config.CommonConfig, base *infra.Base) (*TaskHandler, 
 		}
 	}()
 	return &TaskHandler{
-		client: &http.Client{
+		client:      &http.Client{
 			Timeout: 5 * time.Minute,
 		},
-		email: email,
-		imProducer: imProducerClient.Producer(),
-		Base:  base,
-		taskSender: taskSender,
+		email:       email,
+		imProducer:  imProducerClient.Producer(),
+		Base:        base,
+		taskSender:  taskSender,
+		mediaPrefix: schedulerConf.Audit.MediaPrefix,
+		auditServer: schedulerConf.Audit.ServerAddr,
 	}, nil
 }
 

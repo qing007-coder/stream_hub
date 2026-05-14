@@ -13,7 +13,7 @@ type CommonConfig struct {
 	Clickhouse    Clickhouse    `mapstructure:"clickhouse"`
 	Minio         Minio         `mapstructure:"minio"`
 	MongoDB       MongoDB       `mapstructure:"mongodb"`
-	Ratelimiter Ratelimiter `mapstructure:"ratelimiter"`
+	Ratelimiter   Ratelimiter   `mapstructure:"ratelimiter"`
 }
 
 type Mysql struct {
@@ -38,8 +38,10 @@ type JWT struct {
 }
 
 type Elasticsearch struct {
-	Addr string `mapstructure:"address"`
-	Port string `mapstructure:"port"`
+	Addr     string `mapstructure:"address"`
+	Port     string `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 type Logger struct {
@@ -60,8 +62,10 @@ type Consul struct {
 }
 
 type Kafka struct {
-	Addr string `mapstructure:"addr"`
-	Port string `mapstructure:"port"`
+	Addr     string `mapstructure:"addr"`
+	Port     string `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 type Clickhouse struct {
@@ -69,6 +73,7 @@ type Clickhouse struct {
 	Port     string `mapstructure:"port"`
 	Database string `mapstructure:"database"`
 	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 type Minio struct {
@@ -79,12 +84,15 @@ type Minio struct {
 }
 
 type MongoDB struct {
-	Addr string `mapstructure:"addr"`
-	Port string `mapstructure:"port"`
+	Addr     string `mapstructure:"addr"`
+	Port     string `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	Database string `mapstructure:"database"`
 }
 
 type Ratelimiter struct {
-	WindowSize int `mapstructure:"window_size"`
-	BaseLimit int `mapstructure:"base_limit"`
+	WindowSize int    `mapstructure:"window_size"`
+	BaseLimit  int    `mapstructure:"base_limit"`
 	ScriptPath string `mapstructure:"script_path"`
 }
