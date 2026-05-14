@@ -29,6 +29,8 @@ func NewMysql(conf *config.CommonConfig) (*DB, error) {
 		&storage.VideoCommentModel{},
 		&storage.UserFollowModel{},
 		&storage.MediaModel{},
+		&storage.MessageModel{},
+		&storage.ConversationModel{},
 		&storage.Admin{},
 	); err != nil {
 		return nil, err

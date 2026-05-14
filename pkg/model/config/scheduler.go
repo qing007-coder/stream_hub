@@ -14,6 +14,7 @@ type SchedulerConfig struct {
 	Dispatcher        Dispatcher       `mapstructure:"dispatcher"`
 	Retry             RetryConfig      `mapstructure:"retry"`
 	DeadLetter        DeadLetterConfig `mapstructure:"dead_letter"`
+	Audit             AuditConfig      `mapstructure:"audit"`
 }
 
 type HealthConfig struct {
@@ -49,4 +50,9 @@ type RetryConfig struct {
 type DeadLetterConfig struct {
 	Enabled  bool   `mapstructure:"enabled"`
 	QueueKey string `mapstructure:"queue_key"`
+}
+
+type AuditConfig struct {
+	MediaPrefix string `mapstructure:"media_prefix"`
+	ServerAddr  string `mapstructure:"server_addr"`
 }

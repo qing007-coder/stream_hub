@@ -69,6 +69,7 @@ func (f *Favourite) CreateFavorite(ctx context.Context, req *pb.FavoriteRequest,
 		ResourceID:   req.VideoId,
 		Timestamp:    time.Now().Unix(),
 	})
+	f.notifyVideoAuthor(req.VideoId, uid, "收藏了你的视频")
 
 	resp.Success = true
 	resp.Message = "ok"

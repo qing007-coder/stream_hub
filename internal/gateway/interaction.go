@@ -2,8 +2,10 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"stream_hub/internal/proto/interaction"
 	"stream_hub/pkg/model/api"
+	"stream_hub/pkg/model/storage"
 	"stream_hub/pkg/utils"
 
 	"github.com/gin-gonic/gin"
@@ -717,4 +719,99 @@ func (g *Gateway) ListComments(ctx *gin.Context) {
 	}
 
 	utils.StatusOK(ctx, apiResp, "Comments retrieved successfully")
+}
+
+// @Summary 获取收藏列表
+// @Description 获取当前用户的收藏视频列表
+// @Tags Interaction
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param size query int false "每页数量" default(10)
+// @Success 200 {object} map[string]interface{} "成功"
+// @Failure 400 {object} map[string]interface{} "请求错误"
+// @Router /api/interaction/favorites [get]
+// ListFavorites 获取收藏列表
+func (g *Gateway) ListFavorites(ctx *gin.Context) {
+	var req api.ListFavoritesRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.Size <= 0 {
+		req.Size = 10
+	}
+
+	userID := ctx.GetString("user_id")
+	redisKey := fmt.Sprintf("user:favorite:video:%s", userID)
+
+	start := int64((req.Page - 1) * req.Size)
+	stop := start + int64(req.Size) - 1
+
+	videoIDs, err := g.base.Redis.ZRevRange(context.Background(), redisKey, start, stop)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	total, _ := g.base.Redis.ZCard(context.Background(), redisKey)
+
+	var videos []api.FavoriteVideoInfo
+	if len(videoIDs) > 0 {
+		var videoModels []storage.VideoModel
+		g.base.DB.Where("id IN ?", videoIDs).Find(&videoModels)
+
+		videoMap := make(map[string]storage.VideoModel)
+		authorIDs := make([]string, 0)
+		for _, v := range videoModels {
+			videoMap[v.ID] = v
+			authorIDs = append(authorIDs, v.AuthorID)
+		}
+
+		var users []storage.User
+		authorMap := make(map[string]storage.User)
+		if len(authorIDs) > 0 {
+			g.base.DB.Where("id IN ?", authorIDs).Find(&users)
+			for _, u := range users {
+				authorMap[u.ID] = u
+			}
+		}
+
+		for _, vid := range videoIDs {
+			if v, ok := videoMap[vid]; ok {
+				info := api.FavoriteVideoInfo{
+					ID:            v.ID,
+					Title:         v.Title,
+					CoverURL:      v.CoverUrl,
+					AuthorID:      v.AuthorID,
+					Duration:      v.Duration,
+					LikeCount:     v.LikeCount,
+					CommentCount:  v.CommentCount,
+					FavoriteCount: v.FavoriteCount,
+					ViewCount:     v.ViewCount,
+					CreatedAt:     v.CreatedAt,
+				}
+				if author, exists := authorMap[v.AuthorID]; exists {
+					info.AuthorNickname = author.Nickname
+					info.AuthorAvatar = author.Avatar
+				}
+				videos = append(videos, info)
+			}
+		}
+	}
+
+	hasMore := int64(req.Page)*int64(req.Size) < total
+
+	apiResp := api.ListFavoritesResponse{
+		Videos:  videos,
+		Total:   total,
+		HasMore: hasMore,
+	}
+
+	utils.StatusOK(ctx, apiResp, "Favorites retrieved successfully")
 }

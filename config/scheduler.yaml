@@ -7,7 +7,7 @@ death_key: "scheduler:death"
 
 queue:
   critical: 6
-  default: 3
+  normal: 3
   low: 1
 
 lock:
@@ -38,3 +38,7 @@ retry:
 dead_letter:
   enabled: true
   queue_key: "scheduler:dlq"
+
+audit:
+  media_prefix: "http://localhost:9100"
+  server_addr: "http://127.0.0.1:8088"

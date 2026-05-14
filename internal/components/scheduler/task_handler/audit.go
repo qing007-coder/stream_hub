@@ -17,9 +17,9 @@ func (t *TaskHandler) AuditVideo(ctx context.Context, task *infra_.TaskMessage) 
 		return err
 	}
 	req := api.MachineAudit{
-		TargetURL: fmt.Sprintf("http://192.168.233.128:9100%s", media.M3u8Url),
+		TargetURL: fmt.Sprintf("%s%s", t.mediaPrefix, media.M3u8Url),
 	}
-	data, err := t.PostJSON("http://127.0.0.1:8088/audit", req)
+	data, err := t.PostJSON(t.auditServer+"/audit", req)
 	if err != nil {
 		return err
 	}
@@ -43,8 +43,26 @@ func (t *TaskHandler) AuditVideo(ctx context.Context, task *infra_.TaskMessage) 
 		return errors.New("unknown status")
 	}
 
-	return t.DB.Model(&storage.MediaModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
+	if err := t.DB.Model(&storage.MediaModel{}).Where("id = ?", task.BizID).Updates(map[string]interface{}{
 		"audit_status": status,
-		"metadata":   json.RawMessage(data),
-	}).Error
+		"metadata":     json.RawMessage(data),
+	}).Error; err != nil {
+		return err
+	}
+
+	var video storage.VideoModel
+	if err := t.DB.Select("author_id", "title").Where("id = ?", media.VideoID).First(&video).Error; err == nil && video.AuthorID != "" {
+		notifyContent := "你的视频《" + video.Title + "》机审未通过"
+		if status == constant.VideoStatusMachinePassed {
+			notifyContent = "你的视频《" + video.Title + "》机审通过"
+		}
+		_ = t.SendNotify(ctx, &NotifyPayload{
+			ReceiverID:  video.AuthorID,
+			SenderID:    constant.IMSystemSenderID,
+			Content:     notifyContent,
+			ContentType: constant.IMContentTypeSystem,
+		})
+	}
+
+	return nil
 }

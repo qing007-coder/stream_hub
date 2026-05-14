@@ -12,14 +12,21 @@ type CreateVideoRequest struct {
 
 // AuthorVideoInfo 作者视频信息
 type AuthorVideoInfo struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CoverURL    string    `json:"cover_url"`
-	IsPublic    int32     `json:"is_public"`
-	Duration    int64     `json:"duration"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID               string    `json:"id"`
+	Title            string    `json:"title"`
+	Description      string    `json:"description"`
+	CoverURL         string    `json:"cover_url"`
+	M3U8URL          string    `json:"m3u8_url"`
+	IsPublic         int32     `json:"is_public"`
+	Duration         int64     `json:"duration"`
+	LikeCount        int64     `json:"like_count"`
+	CommentCount     int64     `json:"comment_count"`
+	FavoriteCount    int64     `json:"favorite_count"`
+	ViewCount        int64     `json:"view_count"`
+	TranscodeStatus  int32     `json:"transcode_status"`
+	AuditStatus      int32     `json:"audit_status"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 // PublicVideoInfo 公开视频信息
@@ -32,6 +39,25 @@ type PublicVideoInfo struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// VideoDetailInfo 视频详情信息
+type VideoDetailInfo struct {
+	ID                string    `json:"id"`
+	Title             string    `json:"title"`
+	Description       string    `json:"description"`
+	CoverURL          string    `json:"cover_url"`
+	SourceURL         string    `json:"source_url"`
+	AuthorID          string    `json:"author_id"`
+	AuthorNickname    string    `json:"author_nickname"`
+	AuthorAvatar      string    `json:"author_avatar"`
+	AuthorFollowerCount int64   `json:"author_follower_count"`
+	Duration          int64     `json:"duration"`
+	ViewCount         int64     `json:"view_count"`
+	LikeCount         int64     `json:"like_count"`
+	CommentCount      int64     `json:"comment_count"`
+	FavoriteCount     int64     `json:"favorite_count"`
+	CreatedAt         time.Time `json:"created_at"`
+}
+
 // GetVideoRequest 获取视频请求
 type GetVideoRequest struct {
 	VideoID string `json:"video_id" uri:"video_id" binding:"required"`
@@ -39,7 +65,17 @@ type GetVideoRequest struct {
 
 // GetVideoResponse 获取视频响应
 type GetVideoResponse struct {
-	Data interface{} `json:"data"` // 可能是 AuthorVideoInfo 或 PublicVideoInfo
+	ID            string    `json:"id"`
+	Title         string    `json:"title"`
+	CoverURL      string    `json:"cover_url"`
+	AuthorID      string    `json:"author_id"`
+	Duration      int64     `json:"duration"`
+	LikeCount     int64     `json:"like_count"`
+	CommentCount  int64     `json:"comment_count"`
+	FavoriteCount int64     `json:"favorite_count"`
+	ViewCount     int64     `json:"view_count"`
+	M3U8URL       string    `json:"m3u8_url"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // UpdateVideoRequest 更新视频请求
@@ -89,8 +125,8 @@ type ListMyVideosResponse struct {
 
 // ListFeedVideosRequest 获取视频Feed流请求
 type ListFeedVideosRequest struct {
-	Page    int32 `json:"page" form:"page" binding:"min=1"`
-	Size    int32 `json:"size" form:"size" binding:"min=1,max=50"`
+	Page    int32  `json:"page" form:"page" binding:"min=1"`
+	Size    int32  `json:"size" form:"size" binding:"min=1,max=50"`
 	LastID  string `json:"last_id" form:"last_id"`
 }
 
@@ -99,12 +135,15 @@ type FeedVideoInfo struct {
 	ID             string    `json:"id"`
 	Title          string    `json:"title"`
 	CoverURL       string    `json:"cover_url"`
+	M3U8URL        string    `json:"m3u8_url"`
 	AuthorID       string    `json:"author_id"`
 	AuthorNickname string    `json:"author_nickname"`
 	AuthorAvatar   string    `json:"author_avatar"`
 	Duration       int64     `json:"duration"`
 	LikeCount      int64     `json:"like_count"`
 	CommentCount   int64     `json:"comment_count"`
+	FavoriteCount  int64     `json:"favorite_count"`
+	ViewCount      int64     `json:"view_count"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
@@ -281,4 +320,33 @@ type ListCommentsResponse struct {
 	Comments []Comment `json:"comments"`
 	Total    int64     `json:"total"`
 	HasMore  bool      `json:"has_more"`
+}
+
+// ListFavoritesRequest 获取收藏列表请求
+type ListFavoritesRequest struct {
+	Page int32 `json:"page" form:"page" binding:"omitempty,min=1"`
+	Size int32 `json:"size" form:"size" binding:"omitempty,min=1,max=50"`
+}
+
+// FavoriteVideoInfo 收藏的视频信息
+type FavoriteVideoInfo struct {
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	CoverURL        string    `json:"cover_url"`
+	AuthorID        string    `json:"author_id"`
+	AuthorNickname  string    `json:"author_nickname"`
+	AuthorAvatar    string    `json:"author_avatar"`
+	Duration        int64     `json:"duration"`
+	LikeCount       int64     `json:"like_count"`
+	CommentCount    int64     `json:"comment_count"`
+	FavoriteCount   int64     `json:"favorite_count"`
+	ViewCount       int64     `json:"view_count"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+// ListFavoritesResponse 获取收藏列表响应
+type ListFavoritesResponse struct {
+	Videos  []FavoriteVideoInfo `json:"videos"`
+	Total   int64               `json:"total"`
+	HasMore bool                `json:"has_more"`
 }

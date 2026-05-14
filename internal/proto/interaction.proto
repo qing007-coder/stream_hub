@@ -23,6 +23,7 @@ service InteractionService {
   rpc CreateFavorite(FavoriteRequest) returns (ActionResponse);
   rpc DeleteFavorite(FavoriteRequest) returns (ActionResponse);
   rpc IsFavorite(IsFavoriteRequest) returns (IsFavoriteResponse);
+  // ListFavorites 由 Gateway 层直接实现（Redis + MySQL），不走 gRPC
 
   // 关注
   rpc CreateFollow(FollowRequest) returns (ActionResponse);

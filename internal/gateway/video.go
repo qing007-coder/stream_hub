@@ -47,14 +47,17 @@ func (g *Gateway) CreateVideo(ctx *gin.Context) {
 	}
 
 	apiResp := api.AuthorVideoInfo{
-		ID:          resp.Id,
-		Title:       resp.Title,
-		Description: resp.Description,
-		CoverURL:    resp.CoverUrl,
-		IsPublic:    resp.IsPublic,
-		Duration:    resp.Duration,
-		CreatedAt:   resp.CreatedAt.AsTime(),
-		UpdatedAt:   resp.UpdatedAt.AsTime(),
+		ID:              resp.Id,
+		Title:           resp.Title,
+		Description:     resp.Description,
+		CoverURL:        resp.CoverUrl,
+		M3U8URL:         resp.M3U8Url,
+		IsPublic:        resp.IsPublic,
+		Duration:        resp.Duration,
+		TranscodeStatus: resp.TranscodeStatus,
+		AuditStatus:     resp.AuditStatus,
+		CreatedAt:       resp.CreatedAt.AsTime(),
+		UpdatedAt:       resp.UpdatedAt.AsTime(),
 	}
 
 	utils.StatusOK(ctx, apiResp, "Video created successfully")
@@ -93,31 +96,23 @@ func (g *Gateway) GetVideo(ctx *gin.Context) {
 		return
 	}
 
-	var apiResp interface{}
-	if publicVideo := resp.GetPublicVideo(); publicVideo != nil {
-		apiResp = api.PublicVideoInfo{
-			ID:        publicVideo.Id,
-			Title:     publicVideo.Title,
-			CoverURL:  publicVideo.CoverUrl,
-			AuthorID:  publicVideo.AuthorId,
-			Duration:  publicVideo.Duration,
-			CreatedAt: publicVideo.CreatedAt.AsTime(),
-		}
-	} else if authorVideo := resp.GetAuthorVideo(); authorVideo != nil {
-		apiResp = api.AuthorVideoInfo{
-			ID:          authorVideo.Id,
-			Title:       authorVideo.Title,
-			Description: authorVideo.Description,
-			CoverURL:    authorVideo.CoverUrl,
-			IsPublic:    authorVideo.IsPublic,
-			Duration:    authorVideo.Duration,
-			CreatedAt:   authorVideo.CreatedAt.AsTime(),
-			UpdatedAt:   authorVideo.UpdatedAt.AsTime(),
-		}
+	apiResp := api.GetVideoResponse{
+		ID:            resp.Id,
+		Title:         resp.Title,
+		CoverURL:      resp.CoverUrl,
+		AuthorID:      resp.AuthorId,
+		Duration:      resp.Duration,
+		LikeCount:     resp.LikeCount,
+		CommentCount:  resp.CommentCount,
+		FavoriteCount: resp.FavoriteCount,
+		ViewCount:     resp.ViewCount,
+		M3U8URL:       resp.M3U8Url,
+		CreatedAt:     resp.CreatedAt.AsTime(),
 	}
 
 	utils.StatusOK(ctx, apiResp, "Video retrieved successfully")
 }
+
 
 // @Summary 更新视频
 // @Description 更新视频信息
@@ -131,8 +126,7 @@ func (g *Gateway) GetVideo(ctx *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "请求错误"
 // @Router /api/video/update/{video_id} [put]
 // UpdateVideo 更新视频
-func (g *Gateway) UpdateVideo(ctx *gin.Context) {
-	var req api.UpdateVideoRequest
+func (g *Gateway) UpdateVideo(ctx *gin.Context) {	var req api.UpdateVideoRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		utils.BadRequest(ctx, err.Error())
 		return
@@ -163,14 +157,17 @@ func (g *Gateway) UpdateVideo(ctx *gin.Context) {
 	}
 
 	apiResp := api.AuthorVideoInfo{
-		ID:          resp.Id,
-		Title:       resp.Title,
-		Description: resp.Description,
-		CoverURL:    resp.CoverUrl,
-		IsPublic:    resp.IsPublic,
-		Duration:    resp.Duration,
-		CreatedAt:   resp.CreatedAt.AsTime(),
-		UpdatedAt:   resp.UpdatedAt.AsTime(),
+		ID:              resp.Id,
+		Title:           resp.Title,
+		Description:     resp.Description,
+		CoverURL:        resp.CoverUrl,
+		M3U8URL:         resp.M3U8Url,
+		IsPublic:        resp.IsPublic,
+		Duration:        resp.Duration,
+		TranscodeStatus: resp.TranscodeStatus,
+		AuditStatus:     resp.AuditStatus,
+		CreatedAt:       resp.CreatedAt.AsTime(),
+		UpdatedAt:       resp.UpdatedAt.AsTime(),
 	}
 
 	utils.StatusOK(ctx, apiResp, "Video updated successfully")
@@ -317,14 +314,21 @@ func (g *Gateway) ListMyVideos(ctx *gin.Context) {
 	var videos []api.AuthorVideoInfo
 	for _, v := range resp.Videos {
 		videos = append(videos, api.AuthorVideoInfo{
-			ID:          v.Id,
-			Title:       v.Title,
-			Description: v.Description,
-			CoverURL:    v.CoverUrl,
-			IsPublic:    v.IsPublic,
-			Duration:    v.Duration,
-			CreatedAt:   v.CreatedAt.AsTime(),
-			UpdatedAt:   v.UpdatedAt.AsTime(),
+			ID:              v.Id,
+			Title:           v.Title,
+			Description:     v.Description,
+			CoverURL:        v.CoverUrl,
+			M3U8URL:         v.M3U8Url,
+			IsPublic:        v.IsPublic,
+			Duration:        v.Duration,
+			LikeCount:       v.LikeCount,
+			CommentCount:    v.CommentCount,
+			FavoriteCount:   v.FavoriteCount,
+			ViewCount:       v.ViewCount,
+			TranscodeStatus: v.TranscodeStatus,
+			AuditStatus:     v.AuditStatus,
+			CreatedAt:       v.CreatedAt.AsTime(),
+			UpdatedAt:       v.UpdatedAt.AsTime(),
 		})
 	}
 
@@ -379,12 +383,15 @@ func (g *Gateway) ListFeedVideos(ctx *gin.Context) {
 			ID:             v.Id,
 			Title:          v.Title,
 			CoverURL:       v.CoverUrl,
+			M3U8URL:        v.M3U8Url,
 			AuthorID:       v.AuthorId,
 			AuthorNickname: v.AuthorNickname,
 			AuthorAvatar:   v.AuthorAvatar,
 			Duration:       v.Duration,
 			LikeCount:      v.LikeCount,
 			CommentCount:   v.CommentCount,
+			FavoriteCount:  v.FavoriteCount,
+			ViewCount:      v.ViewCount,
 			CreatedAt:      v.CreatedAt.AsTime(),
 		})
 	}
@@ -497,12 +504,15 @@ func (g *Gateway) ListHotVideos(ctx *gin.Context) {
 			ID:             v.Id,
 			Title:          v.Title,
 			CoverURL:       v.CoverUrl,
+			M3U8URL:        v.M3U8Url,
 			AuthorID:       v.AuthorId,
 			AuthorNickname: v.AuthorNickname,
 			AuthorAvatar:   v.AuthorAvatar,
 			Duration:       v.Duration,
 			LikeCount:      v.LikeCount,
 			CommentCount:   v.CommentCount,
+			FavoriteCount:  v.FavoriteCount,
+			ViewCount:      v.ViewCount,
 			CreatedAt:      v.CreatedAt.AsTime(),
 		})
 	}
@@ -515,3 +525,4 @@ func (g *Gateway) ListHotVideos(ctx *gin.Context) {
 
 	utils.StatusOK(ctx, apiResp, "Hot videos retrieved successfully")
 }
+

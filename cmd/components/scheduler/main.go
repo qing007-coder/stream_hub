@@ -8,7 +8,6 @@ import (
 	"stream_hub/pkg/config"
 	"stream_hub/pkg/constant"
 	infra_ "stream_hub/pkg/model/infra"
-	"time"
 )
 
 func main() {
@@ -30,7 +29,7 @@ func main() {
 		return
 	}
 
-	handler, err := task_handler.NewTaskHandler(commonConf, base)
+	handler, err := task_handler.NewTaskHandler(commonConf, schedulerConf, base)
 	if err != nil {
 		fmt.Println("err:", err)
 		return
@@ -44,6 +43,7 @@ func main() {
 	serveMux.HandleFunc(constant.TaskCalculateFeed, handler.CalculateFeed)
 	serveMux.HandleFunc(constant.TaskVideoAudit, handler.AuditVideo)
 	serveMux.HandleFunc(constant.TaskStorePersistency, handler.StorePersistency)
+	serveMux.HandleFunc(constant.TaskSendNotify, handler.NotifyTask)
 
 	taskSender, err := infra.NewTaskSender(commonConf)
 	if err != nil {
@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// 初始化定时任务种子
-	taskSender.SendDelayTask(infra_.TaskMessage{
+	taskSender.SendTask(infra_.TaskMessage{
 		Type:     constant.TaskCalculateFeed,
 		BizID:    "",
 		Priority: "critical",
@@ -62,7 +62,7 @@ func main() {
 			Source:   constant.Scheduler,
 			Data:     nil,
 		},
-	}, time.Hour*2)
+	})
 
 	server.RegisterServeMux(serveMux)
 

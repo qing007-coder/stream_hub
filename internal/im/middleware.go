@@ -1,8 +1,7 @@
-package media
+package im
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
@@ -38,13 +37,10 @@ func (m *Middleware) Cors() gin.HandlerFunc {
 			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 
-		// 处理预检请求 (OPTIONS)
 		if method == "OPTIONS" {
-			// 注意：预检请求直接中断，不要走后面的 Auth 中间件
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
-		fmt.Println("CORS triggered, Method:", c.Request.Method)
 
 		c.Next()
 	}
@@ -72,7 +68,7 @@ func (m *Middleware) LogToStorage() gin.HandlerFunc {
 				traceID,
 				reqMethod,
 				path,
-				constant.Media,
+				constant.IM,
 				status,
 				latency,
 			)
@@ -84,7 +80,7 @@ func (m *Middleware) LogToStorage() gin.HandlerFunc {
 				traceID,
 				reqMethod,
 				path,
-				constant.Media,
+				constant.IM,
 				status,
 				latency,
 			)
@@ -97,7 +93,7 @@ func (m *Middleware) LogToStorage() gin.HandlerFunc {
 			traceID,
 			reqMethod,
 			path,
-			constant.Media,
+			constant.IM,
 			status,
 			latency,
 		)
@@ -107,6 +103,9 @@ func (m *Middleware) LogToStorage() gin.HandlerFunc {
 func (m *Middleware) Auth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("Authorization")
+		if token == "" {
+			token = ctx.Query("token")
+		}
 		if token == "" {
 			utils.UnAuthorizationRequest(ctx, "need token")
 			ctx.Abort()

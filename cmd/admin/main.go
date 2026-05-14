@@ -6,6 +6,7 @@ import (
 	"stream_hub/internal/infra"
 	"stream_hub/internal/security"
 	"stream_hub/pkg/config"
+	"stream_hub/pkg/mq"
 )
 
 func main() {
@@ -27,6 +28,22 @@ func main() {
 		return
 	}
 
+	producer, err := mq.NewKafkaProducer(commonConf)
+	if err != nil {
+		fmt.Println("Failed to create kafka producer:", err)
+		return
+	}
+	defer producer.Producer().Close()
+	go func() {
+		for {
+			select {
+			case err := <-producer.Producer().Errors():
+				fmt.Println("Kafka producer error:", err)
+			case <-producer.Producer().Successes():
+			}
+		}
+	}()
+
 	auth := security.NewAuth(commonConf)
 	
 	userController := admin.NewUserController(base)
@@ -35,7 +52,7 @@ func main() {
 		return
 	}
 
-	router := admin.NewAdminRouter(base, auth, adminConf)
+	router := admin.NewAdminRouter(base, auth, adminConf, producer.Producer())
 
 	fmt.Printf("Admin service starting on port %d...\n", adminConf.Port)
 	if err := router.Run(); err != nil {

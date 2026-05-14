@@ -46,7 +46,7 @@ func (r *UserRouter) init() {
 
 		user.PUT("/update_profile", r.middleware.Auth(), r.user.UpdateProfile)
 		user.PUT("/password", r.middleware.Auth(), r.user.UpdatePassword)
-		user.GET("/get_user_profile", r.middleware.Auth(), r.user.GetUserProfile)
+		user.GET("/get_user_profile/:id", r.middleware.Auth(), r.user.GetUserProfile)
 	}
 }
 

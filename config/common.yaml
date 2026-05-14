@@ -1,60 +1,68 @@
 mysql:
-  address: "127.0.0.1"
-  port: "3306"
-  password: "123456"
-  database: "stream_hub"
-  name: "root"
+  address: "${MYSQL_HOST:-mysql}"
+  port: "${MYSQL_PORT:-3306}"
+  password: "${MYSQL_PASSWORD:-StreamHub@2024}"
+  database: "${MYSQL_DATABASE:-stream_hub}"
+  name: "${MYSQL_USER:-root}"
   conf: "charset=utf8&parseTime=true&loc=Local"
 
 redis:
-  address: "192.168.233.128"
-  port: "6379"
+  address: "${REDIS_HOST:-redis}"
+  port: "${REDIS_PORT:-6379}"
   db: 0
-  password: ""
+  password: "${REDIS_PASSWORD:-}"
 
 jwt:
   refresh: 7
   access: 1
 
 elasticsearch:
-  address: "http://192.168.233.128"
-  port: "9200"
+  address: "${ELASTICSEARCH_HOST:-http://elasticsearch}"
+  port: "${ELASTICSEARCH_PORT:-9200}"
+  username: "${ELASTICSEARCH_USER:-elastic}"
+  password: "${ELASTICSEARCH_PASSWORD:-changeme}"
 
-secretKey: "qing"
+secretKey: "${SECRET_KEY:-}"
 
 email:
-  username: "1457800511@qq.com"
-  password: "mpfbwsxwakbbfgdg"
-  host: "smtp.qq.com"
-  port: 587
+  username: "${EMAIL_USERNAME:-}"
+  password: "${EMAIL_PASSWORD:-}"
+  host: "${EMAIL_HOST:-smtp.qq.com}"
+  port: ${EMAIL_PORT:-587}
 
 logger:
   max_size: 300
   duration: 5
 
 consul:
-  addr: "192.168.233.128"
-  port: "8500"
+  addr: "${CONSUL_HOST:-consul}"
+  port: "${CONSUL_PORT:-8500}"
 
 kafka:
-  addr: "192.168.233.128"
-  port: "9092"
+  addr: "${KAFKA_HOST:-kafka}"
+  port: "${KAFKA_PORT:-9092}"
+  username: "${KAFKA_USER:-admin}"
+  password: "${KAFKA_PASSWORD:-kafka_secret}"
 
 clickhouse:
-  addr: "192.168.233.128"
-  port: "9000"
-  database: "stream_hub"
-  username: "default"
+  addr: "${CLICKHOUSE_HOST:-clickhouse}"
+  port: "${CLICKHOUSE_PORT:-9000}"
+  database: "${CLICKHOUSE_DATABASE:-stream_hub}"
+  username: "${CLICKHOUSE_USER:-default}"
+  password: "${CLICKHOUSE_PASSWORD:-}"
 
 minio:
-  endpoint: "192.168.233.128"
-  port: "9100"
-  access_key: "admin"
-  secret_key: "88888888"
+  endpoint: "${MINIO_HOST:-minio}"
+  port: "${MINIO_PORT:-9000}"
+  access_key: "${MINIO_ACCESS_KEY:-admin}"
+  secret_key: "${MINIO_SECRET_KEY:-88888888}"
 
 mongodb:
-  addr: "192.168.233.128"
-  port: "27017"
+  addr: "${MONGODB_HOST:-mongodb}"
+  port: "${MONGODB_PORT:-27017}"
+  username: "${MONGODB_USER:-admin}"
+  password: "${MONGODB_PASSWORD:-mongodb_secret}"
+  database: "${MONGODB_DATABASE:-stream_hub}"
 
 ratelimiter:
   window_size: 10000

@@ -411,12 +411,18 @@ func (x *InternalVideoInfo) GetUpdatedAt() *timestamppb.Timestamp {
 }
 
 type GetVideoResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Data:
-	//
-	//	*GetVideoResponse_PublicVideo
-	//	*GetVideoResponse_AuthorVideo
-	Data          isGetVideoResponse_Data `protobuf_oneof:"data"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	CoverUrl      string                 `protobuf:"bytes,3,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,4,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	Duration      int64                  `protobuf:"varint,5,opt,name=duration,proto3" json:"duration,omitempty"`
+	LikeCount     int64                  `protobuf:"varint,6,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`
+	CommentCount  int64                  `protobuf:"varint,7,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`
+	FavoriteCount int64                  `protobuf:"varint,8,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"`
+	ViewCount     int64                  `protobuf:"varint,9,opt,name=view_count,json=viewCount,proto3" json:"view_count,omitempty"`
+	M3U8Url       string                 `protobuf:"bytes,10,opt,name=m3u8_url,json=m3u8Url,proto3" json:"m3u8_url,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -451,46 +457,82 @@ func (*GetVideoResponse) Descriptor() ([]byte, []int) {
 	return file_video_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetVideoResponse) GetData() isGetVideoResponse_Data {
+func (x *GetVideoResponse) GetId() string {
 	if x != nil {
-		return x.Data
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GetVideoResponse) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *GetVideoResponse) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
+}
+
+func (x *GetVideoResponse) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
+}
+
+func (x *GetVideoResponse) GetDuration() int64 {
+	if x != nil {
+		return x.Duration
+	}
+	return 0
+}
+
+func (x *GetVideoResponse) GetLikeCount() int64 {
+	if x != nil {
+		return x.LikeCount
+	}
+	return 0
+}
+
+func (x *GetVideoResponse) GetCommentCount() int64 {
+	if x != nil {
+		return x.CommentCount
+	}
+	return 0
+}
+
+func (x *GetVideoResponse) GetFavoriteCount() int64 {
+	if x != nil {
+		return x.FavoriteCount
+	}
+	return 0
+}
+
+func (x *GetVideoResponse) GetViewCount() int64 {
+	if x != nil {
+		return x.ViewCount
+	}
+	return 0
+}
+
+func (x *GetVideoResponse) GetM3U8Url() string {
+	if x != nil {
+		return x.M3U8Url
+	}
+	return ""
+}
+
+func (x *GetVideoResponse) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
 	}
 	return nil
 }
-
-func (x *GetVideoResponse) GetPublicVideo() *PublicVideoInfo {
-	if x != nil {
-		if x, ok := x.Data.(*GetVideoResponse_PublicVideo); ok {
-			return x.PublicVideo
-		}
-	}
-	return nil
-}
-
-func (x *GetVideoResponse) GetAuthorVideo() *AuthorVideoInfo {
-	if x != nil {
-		if x, ok := x.Data.(*GetVideoResponse_AuthorVideo); ok {
-			return x.AuthorVideo
-		}
-	}
-	return nil
-}
-
-type isGetVideoResponse_Data interface {
-	isGetVideoResponse_Data()
-}
-
-type GetVideoResponse_PublicVideo struct {
-	PublicVideo *PublicVideoInfo `protobuf:"bytes,1,opt,name=public_video,json=publicVideo,proto3,oneof"`
-}
-
-type GetVideoResponse_AuthorVideo struct {
-	AuthorVideo *AuthorVideoInfo `protobuf:"bytes,2,opt,name=author_video,json=authorVideo,proto3,oneof"`
-}
-
-func (*GetVideoResponse_PublicVideo) isGetVideoResponse_Data() {}
-
-func (*GetVideoResponse_AuthorVideo) isGetVideoResponse_Data() {}
 
 type CreateVideoRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -1123,8 +1165,10 @@ type FeedVideoInfo struct {
 	Duration       int64                  `protobuf:"varint,7,opt,name=duration,proto3" json:"duration,omitempty"`
 	LikeCount      int64                  `protobuf:"varint,8,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`
 	CommentCount   int64                  `protobuf:"varint,9,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`
-	M3U8Url        string                 `protobuf:"bytes,10,opt,name=m3u8_url,json=m3u8Url,proto3" json:"m3u8_url,omitempty"`
-	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FavoriteCount  int64                  `protobuf:"varint,10,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"`
+	ViewCount      int64                  `protobuf:"varint,11,opt,name=view_count,json=viewCount,proto3" json:"view_count,omitempty"`
+	M3U8Url        string                 `protobuf:"bytes,12,opt,name=m3u8_url,json=m3u8Url,proto3" json:"m3u8_url,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1218,6 +1262,20 @@ func (x *FeedVideoInfo) GetLikeCount() int64 {
 func (x *FeedVideoInfo) GetCommentCount() int64 {
 	if x != nil {
 		return x.CommentCount
+	}
+	return 0
+}
+
+func (x *FeedVideoInfo) GetFavoriteCount() int64 {
+	if x != nil {
+		return x.FavoriteCount
+	}
+	return 0
+}
+
+func (x *FeedVideoInfo) GetViewCount() int64 {
+	if x != nil {
+		return x.ViewCount
 	}
 	return 0
 }
@@ -1521,11 +1579,23 @@ const file_video_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xaa\x01\n" +
-	"\x10GetVideoResponse\x12F\n" +
-	"\fpublic_video\x18\x01 \x01(\v2!.stream_hub.video.PublicVideoInfoH\x00R\vpublicVideo\x12F\n" +
-	"\fauthor_video\x18\x02 \x01(\v2!.stream_hub.video.AuthorVideoInfoH\x00R\vauthorVideoB\x06\n" +
-	"\x04data\"\x95\x01\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xee\x02\n" +
+	"\x10GetVideoResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1b\n" +
+	"\tcover_url\x18\x03 \x01(\tR\bcoverUrl\x12\x1b\n" +
+	"\tauthor_id\x18\x04 \x01(\tR\bauthorId\x12\x1a\n" +
+	"\bduration\x18\x05 \x01(\x03R\bduration\x12\x1d\n" +
+	"\n" +
+	"like_count\x18\x06 \x01(\x03R\tlikeCount\x12#\n" +
+	"\rcomment_count\x18\a \x01(\x03R\fcommentCount\x12%\n" +
+	"\x0efavorite_count\x18\b \x01(\x03R\rfavoriteCount\x12\x1d\n" +
+	"\n" +
+	"view_count\x18\t \x01(\x03R\tviewCount\x12\x19\n" +
+	"\bm3u8_url\x18\n" +
+	" \x01(\tR\am3u8Url\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x95\x01\n" +
 	"\x12CreateVideoRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12*\n" +
@@ -1564,7 +1634,7 @@ const file_video_proto_rawDesc = "" +
 	"\x16ListFeedVideosResponse\x127\n" +
 	"\x06videos\x18\x01 \x03(\v2\x1f.stream_hub.video.FeedVideoInfoR\x06videos\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x19\n" +
-	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"\xf3\x02\n" +
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"\xb9\x03\n" +
 	"\rFeedVideoInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1b\n" +
@@ -1575,11 +1645,14 @@ const file_video_proto_rawDesc = "" +
 	"\bduration\x18\a \x01(\x03R\bduration\x12\x1d\n" +
 	"\n" +
 	"like_count\x18\b \x01(\x03R\tlikeCount\x12#\n" +
-	"\rcomment_count\x18\t \x01(\x03R\fcommentCount\x12\x19\n" +
-	"\bm3u8_url\x18\n" +
-	" \x01(\tR\am3u8Url\x129\n" +
+	"\rcomment_count\x18\t \x01(\x03R\fcommentCount\x12%\n" +
+	"\x0efavorite_count\x18\n" +
+	" \x01(\x03R\rfavoriteCount\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"W\n" +
+	"view_count\x18\v \x01(\x03R\tviewCount\x12\x19\n" +
+	"\bm3u8_url\x18\f \x01(\tR\am3u8Url\x129\n" +
+	"\n" +
+	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"W\n" +
 	"\x13SearchVideosRequest\x12\x18\n" +
 	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x12\n" +
@@ -1648,47 +1721,42 @@ var file_video_proto_depIdxs = []int32{
 	20, // 2: stream_hub.video.AuthorVideoInfo.updated_at:type_name -> google.protobuf.Timestamp
 	20, // 3: stream_hub.video.InternalVideoInfo.created_at:type_name -> google.protobuf.Timestamp
 	20, // 4: stream_hub.video.InternalVideoInfo.updated_at:type_name -> google.protobuf.Timestamp
-	0,  // 5: stream_hub.video.GetVideoResponse.public_video:type_name -> stream_hub.video.PublicVideoInfo
-	1,  // 6: stream_hub.video.GetVideoResponse.author_video:type_name -> stream_hub.video.AuthorVideoInfo
-	0,  // 7: stream_hub.video.ListUserPublishedVideosResponse.videos:type_name -> stream_hub.video.PublicVideoInfo
-	1,  // 8: stream_hub.video.ListMyVideosResponse.videos:type_name -> stream_hub.video.AuthorVideoInfo
-	15, // 9: stream_hub.video.ListFeedVideosResponse.videos:type_name -> stream_hub.video.FeedVideoInfo
-	20, // 10: stream_hub.video.FeedVideoInfo.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 11: stream_hub.video.SearchVideosResponse.videos:type_name -> stream_hub.video.PublicVideoInfo
-	15, // 12: stream_hub.video.ListHotVideosResponse.videos:type_name -> stream_hub.video.FeedVideoInfo
-	4,  // 13: stream_hub.video.VideoService.CreateVideo:input_type -> stream_hub.video.CreateVideoRequest
-	5,  // 14: stream_hub.video.VideoService.GetVideo:input_type -> stream_hub.video.GetVideoRequest
-	6,  // 15: stream_hub.video.VideoService.UpdateVideo:input_type -> stream_hub.video.UpdateVideoRequest
-	7,  // 16: stream_hub.video.VideoService.DeleteVideo:input_type -> stream_hub.video.DeleteVideoRequest
-	9,  // 17: stream_hub.video.VideoService.ListUserPublishedVideos:input_type -> stream_hub.video.ListUserPublishedVideosRequest
-	11, // 18: stream_hub.video.VideoService.ListMyVideos:input_type -> stream_hub.video.ListMyVideosRequest
-	13, // 19: stream_hub.video.VideoService.ListFeedVideos:input_type -> stream_hub.video.ListFeedVideosRequest
-	16, // 20: stream_hub.video.VideoService.SearchVideos:input_type -> stream_hub.video.SearchVideosRequest
-	18, // 21: stream_hub.video.VideoService.ListHotVideos:input_type -> stream_hub.video.ListHotVideosRequest
-	1,  // 22: stream_hub.video.VideoService.CreateVideo:output_type -> stream_hub.video.AuthorVideoInfo
-	3,  // 23: stream_hub.video.VideoService.GetVideo:output_type -> stream_hub.video.GetVideoResponse
-	1,  // 24: stream_hub.video.VideoService.UpdateVideo:output_type -> stream_hub.video.AuthorVideoInfo
-	8,  // 25: stream_hub.video.VideoService.DeleteVideo:output_type -> stream_hub.video.DeleteVideoResponse
-	10, // 26: stream_hub.video.VideoService.ListUserPublishedVideos:output_type -> stream_hub.video.ListUserPublishedVideosResponse
-	12, // 27: stream_hub.video.VideoService.ListMyVideos:output_type -> stream_hub.video.ListMyVideosResponse
-	14, // 28: stream_hub.video.VideoService.ListFeedVideos:output_type -> stream_hub.video.ListFeedVideosResponse
-	17, // 29: stream_hub.video.VideoService.SearchVideos:output_type -> stream_hub.video.SearchVideosResponse
-	19, // 30: stream_hub.video.VideoService.ListHotVideos:output_type -> stream_hub.video.ListHotVideosResponse
-	22, // [22:31] is the sub-list for method output_type
-	13, // [13:22] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	20, // 5: stream_hub.video.GetVideoResponse.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 6: stream_hub.video.ListUserPublishedVideosResponse.videos:type_name -> stream_hub.video.PublicVideoInfo
+	1,  // 7: stream_hub.video.ListMyVideosResponse.videos:type_name -> stream_hub.video.AuthorVideoInfo
+	15, // 8: stream_hub.video.ListFeedVideosResponse.videos:type_name -> stream_hub.video.FeedVideoInfo
+	20, // 9: stream_hub.video.FeedVideoInfo.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 10: stream_hub.video.SearchVideosResponse.videos:type_name -> stream_hub.video.PublicVideoInfo
+	15, // 11: stream_hub.video.ListHotVideosResponse.videos:type_name -> stream_hub.video.FeedVideoInfo
+	4,  // 12: stream_hub.video.VideoService.CreateVideo:input_type -> stream_hub.video.CreateVideoRequest
+	5,  // 13: stream_hub.video.VideoService.GetVideo:input_type -> stream_hub.video.GetVideoRequest
+	6,  // 14: stream_hub.video.VideoService.UpdateVideo:input_type -> stream_hub.video.UpdateVideoRequest
+	7,  // 15: stream_hub.video.VideoService.DeleteVideo:input_type -> stream_hub.video.DeleteVideoRequest
+	9,  // 16: stream_hub.video.VideoService.ListUserPublishedVideos:input_type -> stream_hub.video.ListUserPublishedVideosRequest
+	11, // 17: stream_hub.video.VideoService.ListMyVideos:input_type -> stream_hub.video.ListMyVideosRequest
+	13, // 18: stream_hub.video.VideoService.ListFeedVideos:input_type -> stream_hub.video.ListFeedVideosRequest
+	16, // 19: stream_hub.video.VideoService.SearchVideos:input_type -> stream_hub.video.SearchVideosRequest
+	18, // 20: stream_hub.video.VideoService.ListHotVideos:input_type -> stream_hub.video.ListHotVideosRequest
+	1,  // 21: stream_hub.video.VideoService.CreateVideo:output_type -> stream_hub.video.AuthorVideoInfo
+	3,  // 22: stream_hub.video.VideoService.GetVideo:output_type -> stream_hub.video.GetVideoResponse
+	1,  // 23: stream_hub.video.VideoService.UpdateVideo:output_type -> stream_hub.video.AuthorVideoInfo
+	8,  // 24: stream_hub.video.VideoService.DeleteVideo:output_type -> stream_hub.video.DeleteVideoResponse
+	10, // 25: stream_hub.video.VideoService.ListUserPublishedVideos:output_type -> stream_hub.video.ListUserPublishedVideosResponse
+	12, // 26: stream_hub.video.VideoService.ListMyVideos:output_type -> stream_hub.video.ListMyVideosResponse
+	14, // 27: stream_hub.video.VideoService.ListFeedVideos:output_type -> stream_hub.video.ListFeedVideosResponse
+	17, // 28: stream_hub.video.VideoService.SearchVideos:output_type -> stream_hub.video.SearchVideosResponse
+	19, // 29: stream_hub.video.VideoService.ListHotVideos:output_type -> stream_hub.video.ListHotVideosResponse
+	21, // [21:30] is the sub-list for method output_type
+	12, // [12:21] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_video_proto_init() }
 func file_video_proto_init() {
 	if File_video_proto != nil {
 		return
-	}
-	file_video_proto_msgTypes[3].OneofWrappers = []any{
-		(*GetVideoResponse_PublicVideo)(nil),
-		(*GetVideoResponse_AuthorVideo)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

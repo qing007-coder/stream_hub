@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/minio/minio-go/v7"
-	"golang.org/x/crypto/bcrypt"
 	"stream_hub/internal/infra"
 	"stream_hub/internal/security"
 	"stream_hub/pkg/constant"
@@ -18,6 +15,10 @@ import (
 	"stream_hub/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserApi struct {
@@ -171,14 +172,14 @@ func (u *UserApi) SendVerificationCode(ctx *gin.Context) {
 		return
 	}
 	if err := u.TaskSender.SendTask(infra_.TaskMessage{
-		Type: constant.TaskSendEmailCode,
-		BizID: req.Email,
-		Priority: "critical",
+		Type:       constant.TaskSendEmailCode,
+		BizID:      req.Email,
+		Priority:   "critical",
 		RetryCount: 0,
 		Payload: infra_.TaskPayload{
 			Operator: "",
-			Source: constant.User,
-			Data: nil,
+			Source:   constant.User,
+			Data:     nil,
 		},
 	}); err != nil {
 		utils.BadRequest(ctx, "send task failed")
@@ -257,11 +258,15 @@ func (u *UserApi) UpdatePassword(ctx *gin.Context) {
 }
 
 func (u *UserApi) GetUserProfile(ctx *gin.Context) {
-	uid := ctx.GetString("user_id")
+	uid := ctx.Param("id")
 	var user storage.User
-	u.DB.Where("id = ?", uid).First(&user)
+	if err := u.DB.Where("id = ?", uid).First(&user).Error; err != nil {
+		utils.BadRequest(ctx, "id is not exist")
+		return
+	}
 
 	utils.StatusOK(ctx, api.GetUserProfileResp{
+		UserID:         user.ID,
 		Email:          user.Email,
 		Nickname:       user.Nickname,
 		BackgroundUrl:  user.BackgroundURL,

@@ -16,7 +16,7 @@ type GetVideoListReq struct {
 	Page     int    `form:"page" binding:"min=1"`
 	Size     int    `form:"size" binding:"min=10"`
 	UserID   string `form:"user_id"`
-	IsPublic bool   `form:"is_public"`
+	IsPublic int   `form:"is_public"`
 }
 
 type UpdateVideoReq struct {

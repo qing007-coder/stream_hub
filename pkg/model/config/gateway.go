@@ -9,4 +9,5 @@ type GatewayConfig struct {
 type Service struct {
 	InteractionService string `mapstructure:"interaction_service"`
 	VideoService       string `mapstructure:"video_service"`
+	UserService        string `mapstructure:"user_service"`
 }
